@@ -1,0 +1,1013 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Analisador de Vibração IP-63B</title>
+
+<style>
+
+:root{
+    --bg:#d9d9d9;
+    --blue:#1d4f91;
+    --orange:#ff6600;
+    --green:#4CAF50;
+    --yellow:#FFC107;
+    --orange2:#FF9800;
+    --red:#F44336;
+}
+
+*{
+    box-sizing:border-box;
+    margin:0;
+    padding:0;
+    font-family:Arial, sans-serif;
+}
+
+body{
+    background:var(--bg);
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    min-height:100vh;
+    padding:20px;
+}
+
+.device{
+    width:360px;
+    background:#2f2f2f;
+    border-radius:22px;
+    padding:18px;
+    box-shadow:0 12px 25px rgba(0,0,0,0.4);
+    border:4px solid #111;
+}
+
+.header{
+    background:var(--blue);
+    color:white;
+    padding:12px;
+    margin:-18px -18px 18px -18px;
+    border-radius:18px 18px 0 0;
+    text-align:center;
+    font-weight:bold;
+    font-size:14px;
+    letter-spacing:1px;
+}
+
+.display{
+    background:linear-gradient(to bottom,#f8f8f8,#dcdcdc);
+    border:2px solid #888;
+    border-radius:8px;
+    padding:15px;
+}
+
+.group{
+    margin-bottom:16px;
+    border-bottom:1px solid #bbb;
+    padding-bottom:10px;
+}
+
+.label{
+    font-size:11px;
+    color:#555;
+    margin-bottom:5px;
+    font-weight:bold;
+    letter-spacing:0.5px;
+}
+
+.value{
+    display:flex;
+    align-items:center;
+}
+
+input[type="number"]{
+    width:100%;
+    border:none;
+    background:transparent;
+    color:var(--orange);
+    font-size:36px;
+    text-align:right;
+    outline:none;
+    font-family:'Courier New', monospace;
+    font-weight:bold;
+    letter-spacing:2px;
+}
+
+input[type="number"]::-webkit-inner-spin-button{
+    appearance:none;
+}
+
+.unit{
+    margin-left:5px;
+    font-weight:bold;
+    color:#333;
+    font-size:13px;
+    white-space:nowrap;
+}
+
+select{
+    width:100%;
+    padding:8px;
+    border-radius:6px;
+    border:1px solid #999;
+    background:white;
+    font-weight:bold;
+    font-size:13px;
+}
+
+.classe-box{
+    background:#e8f0fb;
+    border:1px solid #aac0e8;
+    border-radius:6px;
+    padding:8px 10px;
+    font-size:12px;
+    font-weight:bold;
+    color:var(--blue);
+    min-height:34px;
+}
+
+/* Barra de intensidade colorida */
+.bar{
+    display:flex;
+    height:16px;
+    border-radius:4px;
+    overflow:hidden;
+    margin:14px 0 6px 0;
+    border:1px solid #777;
+}
+
+.bar div{ flex:1; }
+.green  { background:var(--green);   }
+.yellow { background:var(--yellow);  }
+.orange2{ background:var(--orange2); }
+.red    { background:var(--red);     }
+
+/* Legenda da barra */
+.bar-legend{
+    display:flex;
+    justify-content:space-between;
+    font-size:9px;
+    color:#666;
+    margin-bottom:14px;
+}
+
+.result{ margin-top:10px; }
+
+.badge{
+    padding:10px;
+    border-radius:6px;
+    color:white;
+    font-weight:bold;
+    margin-bottom:12px;
+    font-size:17px;
+    text-align:center;
+}
+
+/* Bloco de cada diagnóstico */
+.diag-bloco{
+    background:white;
+    border-left:4px solid #ccc;
+    border-radius:0 6px 6px 0;
+    padding:8px 10px;
+    margin-bottom:8px;
+    font-size:13px;
+    line-height:1.55;
+}
+
+.diag-bloco.normal  { border-left-color: var(--green);   }
+.diag-bloco.atencao { border-left-color: var(--yellow);  }
+.diag-bloco.alerta  { border-left-color: var(--orange2); }
+.diag-bloco.critico { border-left-color: var(--red);     }
+
+.diag-titulo{
+    font-weight:bold;
+    font-size:12px;
+    margin-bottom:3px;
+    color:#222;
+}
+
+.diag-texto{ color:#444; }
+
+/* Seção de recomendações */
+.rec-section{
+    background:#f0f4ff;
+    border:1px solid #ccd6f0;
+    border-radius:6px;
+    padding:10px;
+    margin-top:10px;
+    font-size:13px;
+    color:#1d4f91;
+    line-height:1.7;
+}
+
+.rec-section b{
+    display:block;
+    margin-bottom:4px;
+    font-size:12px;
+    letter-spacing:0.3px;
+}
+
+.buttons{
+    display:flex;
+    gap:10px;
+    margin-top:16px;
+}
+
+button{
+    flex:1;
+    border:none;
+    padding:12px;
+    border-radius:8px;
+    font-weight:bold;
+    cursor:pointer;
+    font-size:14px;
+}
+
+.analyze{ background:#fbc02d; }
+.clear  { background:#d32f2f; color:white; }
+
+.footer{
+    margin-top:10px;
+    text-align:center;
+    font-size:10px;
+    color:#777;
+    letter-spacing:1px;
+}
+
+
+/* Histórico de medições */
+.historico-section {
+    margin-top: 16px;
+    border-top: 1px solid #bbb;
+    padding-top: 12px;
+}
+.historico-title {
+    font-size: 11px;
+    font-weight: bold;
+    color: #555;
+    letter-spacing: 0.5px;
+    margin-bottom: 8px;
+}
+.historico-lista {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 8px 0;
+}
+.historico-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: white;
+    border-left: 4px solid #ccc;
+    border-radius: 0 4px 4px 0;
+    padding: 6px 8px;
+    margin-bottom: 5px;
+    font-size: 12px;
+}
+.historico-item.bom          { border-left-color: var(--green);   }
+.historico-item.satisfatorio { border-left-color: var(--yellow);  }
+.historico-item.insatisfatorio{ border-left-color: var(--orange2); }
+.historico-item.inaceitavel  { border-left-color: var(--red);     }
+.historico-item .hi-ponto    { font-weight: bold; color: #1d4f91; min-width: 48px; }
+.historico-item .hi-val      { color: var(--orange); font-family: 'Courier New', monospace; font-weight: bold; font-size: 14px; }
+.historico-item .hi-status   { font-size: 11px; font-weight: bold; color: #555; }
+.historico-item .hi-del      { background: none; border: none; color: #bbb; cursor: pointer; font-size: 14px; padding: 0 2px; }
+.historico-item .hi-del:hover{ color: var(--red); }
+.btn-limpar-hist {
+    width: 100%;
+    background: none;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    color: #aaa;
+    font-size: 11px;
+    padding: 6px;
+    cursor: pointer;
+    margin-bottom: 4px;
+}
+.btn-limpar-hist:hover { border-color: var(--red); color: var(--red); }
+
+/* Bloco de relatório */
+.relatorio-section {
+    margin-top: 16px;
+    border-top: 1px solid #bbb;
+    padding-top: 12px;
+    display: none;
+}
+.relatorio-title {
+    font-size: 11px;
+    font-weight: bold;
+    color: #555;
+    letter-spacing: 0.5px;
+    margin-bottom: 8px;
+}
+.relatorio-textarea {
+    width: 100%;
+    min-height: 110px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    padding: 10px;
+    font-size: 13px;
+    line-height: 1.7;
+    color: #222;
+    resize: vertical;
+    background: #fafafa;
+    font-family: Arial, sans-serif;
+}
+.relatorio-textarea:focus { outline: none; border-color: #1d4f91; background: white; }
+.btn-copiar {
+    width: 100%;
+    background: #1d4f91;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    padding: 10px;
+    font-weight: bold;
+    font-size: 13px;
+    cursor: pointer;
+    margin-top: 8px;
+    letter-spacing: 0.5px;
+}
+.btn-copiar:hover { background: #163d72; }
+.btn-copiar:active { transform: scale(0.98); }
+.copiado-msg {
+    text-align: center;
+    font-size: 12px;
+    color: var(--green);
+    font-weight: bold;
+    margin-top: 6px;
+    display: none;
+}
+
+
+/* Campo identificação do motor */
+.input-nome {
+    width: 100%;
+    border: none;
+    border-bottom: 2px solid #1d4f91;
+    background: transparent;
+    font-size: 15px;
+    font-weight: bold;
+    color: #222;
+    padding: 4px 2px;
+    outline: none;
+    font-family: Arial, sans-serif;
+}
+.input-nome::placeholder { color: #bbb; font-weight: normal; }
+.input-nome:focus { border-bottom-color: var(--orange); }
+
+</style>
+
+  <!-- PWA -->
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="IP-63B">
+  <meta name="application-name" content="IP-63B">
+  <meta name="theme-color" content="#1d4f91">
+
+
+  <script>
+  // Manifest inline para PWA
+  const manifestData = {
+    name: "Analisador de Vibração IP-63B",
+    short_name: "IP-63B",
+    description: "Analisador de vibração de motores elétricos — ISO 10816-1",
+    start_url: "./",
+    display: "standalone",
+    background_color: "#d9d9d9",
+    theme_color: "#1d4f91",
+    orientation: "portrait"
+  };
+  const blob = new Blob([JSON.stringify(manifestData)], {type: 'application/json'});
+  const manifestUrl = URL.createObjectURL(blob);
+  const link = document.createElement('link');
+  link.rel = 'manifest';
+  link.href = manifestUrl;
+  document.head.appendChild(link);
+  </script>
+</head>
+<body>
+
+<div class="device">
+
+  <div class="header">ANALISADOR DE VIBRAÇÃO IP-63B</div>
+
+  <div class="display">
+
+    <!-- IDENTIFICAÇÃO DO MOTOR -->
+    <div class="group">
+      <div class="label">IDENTIFICAÇÃO DO MOTOR</div>
+      <input type="text" id="motor-nome" class="input-nome" placeholder="Ex: Motor Bomba Lemasa">
+    </div>
+
+    <!-- POTÊNCIA -->
+    <div class="group">
+      <div class="label">POTÊNCIA DO MOTOR</div>
+      <div class="value">
+        <input type="number" id="cv" placeholder="0" min="0" oninput="detectarClasse()">
+        <div class="unit">CV</div>
+      </div>
+    </div>
+
+    <!-- TIPO DE BASE (só aparece > 100 CV) -->
+    <div class="group" id="grupo-base" style="display:none">
+      <div class="label">TIPO DE BASE</div>
+      <select id="base" onchange="detectarClasse()">
+        <option value="rigida">Base Rígida</option>
+        <option value="flexivel">Base Flexível</option>
+      </select>
+    </div>
+
+    <!-- CLASSE DETECTADA -->
+    <div class="group">
+      <div class="label">CLASSE DETECTADA — ISO 10816-1</div>
+      <div class="classe-box" id="classe-info">— Informe a potência do motor</div>
+    </div>
+
+    <!-- PONTO DE MEDIÇÃO -->
+    <div class="group">
+      <div class="label">PONTO DE MEDIÇÃO</div>
+      <div style="display:flex;gap:8px;margin-top:4px">
+        <button id="btn-la"  onclick="selecionarPonto('LA')"  style="flex:1;padding:10px;border-radius:6px;border:2px solid #1d4f91;background:#1d4f91;color:white;font-weight:bold;cursor:pointer;font-size:13px;">L.A</button>
+        <button id="btn-loa" onclick="selecionarPonto('LOA')" style="flex:1;padding:10px;border-radius:6px;border:2px solid #ccc;background:white;color:#555;font-weight:bold;cursor:pointer;font-size:13px;">L.O.A</button>
+      </div>
+    </div>
+
+    <!-- ACELERAÇÃO -->
+    <div class="group">
+      <div class="label">ACELERAÇÃO</div>
+      <div class="value">
+        <input type="number" id="acc" placeholder="0.0" step="0.1">
+        <div class="unit">m/s²</div>
+      </div>
+    </div>
+
+    <!-- VELOCIDADE -->
+    <div class="group">
+      <div class="label">VELOCIDADE (Vrms)</div>
+      <div class="value">
+        <input type="number" id="vel" placeholder="0.0" step="0.1">
+        <div class="unit">mm/s</div>
+      </div>
+    </div>
+
+    <!-- DESLOCAMENTO -->
+    <div class="group">
+      <div class="label">DESLOCAMENTO (pico a pico)</div>
+      <div class="value">
+        <input type="number" id="disp" placeholder="0.000" step="0.001">
+        <div class="unit">mm</div>
+      </div>
+    </div>
+
+    <!-- BARRA COLORIDA -->
+    <div class="bar">
+      <div class="green"></div>
+      <div class="yellow"></div>
+      <div class="orange2"></div>
+      <div class="red"></div>
+    </div>
+    <div class="bar-legend">
+      <span>BOM</span>
+      <span>SATISFATÓRIO</span>
+      <span>INSATISFATÓRIO</span>
+      <span>INACEITÁVEL</span>
+    </div>
+
+    <!-- RESULTADO -->
+    <div class="result">
+      <div class="badge" id="badge" style="background:var(--green)">🟢 BOM</div>
+      <div id="diagnosis">
+        <div style="font-size:13px;color:#888;text-align:center;padding:20px 0;">Aguardando análise...</div>
+      </div>
+    </div>
+
+    <!-- BOTÕES -->
+    <div class="buttons">
+      <button class="analyze" onclick="analisar()">ANALISAR</button>
+      <button class="clear"   onclick="limpar()">LIMPAR</button>
+    </div>
+
+
+    <!-- HISTÓRICO DA SESSÃO -->
+    <div class="historico-section">
+      <div class="historico-title">HISTÓRICO DA SESSÃO</div>
+      <ul class="historico-lista" id="historico-lista">
+        <li style="font-size:12px;color:#aaa;text-align:center;padding:6px 0;">Nenhuma medição registrada</li>
+      </ul>
+      <button class="btn-limpar-hist" onclick="limparHistorico()">🗑 Limpar histórico</button>
+    </div>
+
+    <!-- BLOCO DE RELATÓRIO -->
+    <div class="relatorio-section" id="relatorio-section">
+      <div class="relatorio-title">TEXTO PARA RELATÓRIO</div>
+      <textarea class="relatorio-textarea" id="relatorio-texto" spellcheck="false"></textarea>
+      <button class="btn-copiar" onclick="copiarRelatorio()">📋 COPIAR TEXTO</button>
+      <div class="copiado-msg" id="copiado-msg">✅ Texto copiado!</div>
+    </div>
+
+    <div class="footer">ISO 10816-1 · IP-63B · Impac</div>
+    <div class="footer" style="margin-top:4px;font-size:10px;color:#999;">Desenvolvido por Luciano Souza e Valdemir Bartelli</div>
+
+  </div>
+</div>
+
+<script>
+
+/* =============================================================
+   TABELAS DE LIMITES — ISO 10816-1
+   Velocidade Vrms (mm/s) por classe:
+     Zona A (novo/bom)     → vel <= limA
+     Zona B (aceitável)    → vel <= limB
+     Zona C (atenção)      → vel <= limC
+     Zona D (crítico)      → vel >  limC
+   =============================================================*/
+const LIMITES_VEL = {
+  "1": { A: 1.80, B: 4.50, C: 7.10  }, // Classe I  — pequeno < 15 kW
+  "2": { A: 2.80, B: 7.10, C: 11.20 }, // Classe II — médio 15–75 kW
+  "3": { A: 4.50, B: 11.20, C: 18.00 },// Classe III — grande base rígida
+  "4": { A: 7.10, B: 18.00, C: 28.00 } // Classe IV  — grande base flexível
+};
+
+/* Aceleração (m/s²) — limiares baseados em prática industrial
+   compatível com ISO 10816-3 para avaliação geral:
+   < 3       → Normal
+   3  – 10   → Atenção  (possível início de desgaste)
+   10 – 50   → Alerta   (falha em desenvolvimento)
+   > 50      → Crítico  (falha grave / iminente)              */
+const LIMITES_ACC = { A: 3.0, B: 10.0, C: 50.0 };
+
+/* Deslocamento pico a pico (mm) por classe
+   Derivado da relação d = v / (π × f) e zonas ISO 10816-1
+   usando f ≈ 25 Hz como referência de baixa frequência:      */
+const LIMITES_DISP = {
+  "1": { A: 0.025, B: 0.071, C: 0.180 },
+  "2": { A: 0.045, B: 0.112, C: 0.280 },
+  "3": { A: 0.071, B: 0.180, C: 0.450 },
+  "4": { A: 0.112, B: 0.280, C: 0.710 }
+};
+
+/* =============================================================
+   DETECTAR CLASSE AUTOMATICAMENTE PELO CV
+   Conversão: 1 CV = 0,7355 kW
+   ============================================================= */
+function detectarClasse(){
+  const cv  = parseFloat(document.getElementById("cv").value) || 0;
+  const kw  = cv * 0.736;
+  const gb  = document.getElementById("grupo-base");
+  const ci  = document.getElementById("classe-info");
+
+  if(cv <= 0){
+    gb.style.display = "none";
+    ci.textContent   = "— Informe a potência do motor";
+    return;
+  }
+
+  if(kw < 15){
+    gb.style.display = "none";
+    ci.textContent   = "Classe I — Pequeno (P < 15 kW / ~20 CV)";
+  } else if(kw <= 75){
+    gb.style.display = "none";
+    ci.textContent   = "Classe II — Médio (15 kW ≤ P ≤ 75 kW / ~20–100 CV)";
+  } else {
+    gb.style.display = "block";
+    const base = document.getElementById("base").value;
+    if(base === "rigida"){
+      ci.textContent = "Classe III — Grande Base Rígida (P > 75 kW / >100 CV)";
+    } else {
+      ci.textContent = "Classe IV — Grande Base Flexível (P > 75 kW / >100 CV)";
+    }
+  }
+}
+
+/* Retorna "1","2","3" ou "4" */
+function getClasse(){
+  const kw = (parseFloat(document.getElementById("cv").value) || 0) * 0.7355;
+  if(kw < 15)   return "1";
+  if(kw <= 75)  return "2";
+  return document.getElementById("base").value === "rigida" ? "3" : "4";
+}
+
+/* Retorna nível de severidade: "normal","atencao","alerta","critico" */
+function nivelVel(vel, cls){
+  const l = LIMITES_VEL[cls];
+  if(vel <= l.A) return "normal";
+  if(vel <= l.B) return "atencao";
+  if(vel <= l.C) return "alerta";
+  return "critico";
+}
+
+function nivelAcc(acc){
+  if(acc <= LIMITES_ACC.A) return "normal";
+  if(acc <= LIMITES_ACC.B) return "atencao";
+  if(acc <= LIMITES_ACC.C) return "alerta";
+  return "critico";
+}
+
+function nivelDisp(disp, cls){
+  const l = LIMITES_DISP[cls];
+  if(disp <= l.A) return "normal";
+  if(disp <= l.B) return "atencao";
+  if(disp <= l.C) return "alerta";
+  return "critico";
+}
+
+/* Retorna o pior nível entre os fornecidos */
+function piorNivel(...niveis){
+  const ordem = ["normal","atencao","alerta","critico"];
+  let idx = 0;
+  niveis.forEach(n => {
+    const i = ordem.indexOf(n);
+    if(i > idx) idx = i;
+  });
+  return ordem[idx];
+}
+
+/* =============================================================
+   DIAGNÓSTICOS COMBINADOS — cruzamento dos 3 parâmetros
+   Baseado em ISO 10816 + ISO 13373 (análise de condição)
+   ============================================================= */
+function diagnosticosCombinados(acc, vel, disp, cls, nAcc, nVel, nDisp){
+
+  const blocos = [];
+
+  /* --- 1. ACELERAÇÃO (indicador de impactos / rolamentos) --- */
+  const textoAcc = {
+    normal:  `Aceleração ${acc.toFixed(2)} m/s² — nível normal. Sem indícios de impactos mecânicos ou falha em rolamentos.`,
+    atencao: `Aceleração ${acc.toFixed(2)} m/s² — nível elevado. Possível início de desgaste em rolamento ou lubrificação insuficiente. Monitorar com frequência.`,
+    alerta:  `Aceleração ${acc.toFixed(2)} m/s² — nível alto. Provável falha em desenvolvimento no rolamento (pitting, trinca na pista ou elemento rolante). Planejar substituição.`,
+    critico: `Aceleração ${acc.toFixed(2)} m/s² — nível crítico. Falha grave em rolamento ou impacto mecânico severo. Risco de travamento. PARAR imediatamente.`
+  };
+  blocos.push({ nivel: nAcc, titulo: "Aceleração / Rolamentos", texto: textoAcc[nAcc] });
+
+  /* --- 2. VELOCIDADE (parâmetro principal ISO 10816-1) --- */
+  const lv = LIMITES_VEL[cls];
+  const textoVel = {
+    normal:  `Velocidade ${vel.toFixed(2)} mm/s — dentro da Zona A da ISO 10816-1. Motor operando em condição normal.`,
+    atencao: `Velocidade ${vel.toFixed(2)} mm/s — Zona B da ISO 10816-1. Vibração aceitável para operação contínua, mas requer monitoramento. Pode indicar início de desequilíbrio ou desalinhamento leve.`,
+    alerta:  `Velocidade ${vel.toFixed(2)} mm/s — Zona C da ISO 10816-1. Operação por tempo limitado. Provável desalinhamento, desequilíbrio moderado ou desgaste em acoplamento.`,
+    critico: `Velocidade ${vel.toFixed(2)} mm/s — Zona D da ISO 10816-1. Vibração PERIGOSA. Risco imediato de dano ao motor, rolamentos e estrutura. PARAR o equipamento.`
+  };
+  blocos.push({ nivel: nVel, titulo: "Velocidade de Vibração (Vrms)", texto: textoVel[nVel] });
+
+  /* --- 3. DESLOCAMENTO (indicador de folga / desequilíbrio) --- */
+  const ld = LIMITES_DISP[cls];
+  const textoDisp = {
+    normal:  `Deslocamento ${disp.toFixed(3)} mm — dentro do limite normal para esta classe. Sem indícios de folga mecânica excessiva.`,
+    atencao: `Deslocamento ${disp.toFixed(3)} mm — levemente elevado. Pode indicar folga incipiente em mancal, pé do motor ou acoplamento.`,
+    alerta:  `Deslocamento ${disp.toFixed(3)} mm — elevado. Possível desequilíbrio dinâmico, folga mecânica avançada ou ressonância estrutural.`,
+    critico: `Deslocamento ${disp.toFixed(3)} mm — crítico. Desequilíbrio severo ou folga estrutural grave. Vibração pode danificar fundação e estrutura adjacente.`
+  };
+  blocos.push({ nivel: nDisp, titulo: "Deslocamento / Folga Mecânica", texto: textoDisp[nDisp] });
+
+  /* --- 4. DIAGNÓSTICOS COMBINADOS (cruzamento dos parâmetros) --- */
+
+  // Aceleração alta + velocidade normal/atenção → rolamento
+  if((nAcc === "alerta" || nAcc === "critico") && (nVel === "normal" || nVel === "atencao")){
+    blocos.push({
+      nivel: nAcc,
+      titulo: "⚙️ Provável Falha em Rolamento",
+      texto: "Aceleração alta com velocidade ainda moderada é padrão característico de defeito em rolamento (ISO 13373-3). O rolamento gera impactos de alta frequência antes que a vibração global aumente. Inspecionar e substituir com urgência."
+    });
+  }
+
+  // Deslocamento alto + velocidade alta → desequilíbrio
+  if((nDisp === "alerta" || nDisp === "critico") && (nVel === "alerta" || nVel === "critico")){
+    blocos.push({
+      nivel: piorNivel(nDisp, nVel),
+      titulo: "🔄 Provável Desequilíbrio do Rotor",
+      texto: "Deslocamento e velocidade elevados simultaneamente indicam desequilíbrio estático ou dinâmico do rotor (ISO 21940). Causas comuns: corrosão, incrustação, desgaste assimétrico ou perda de massa. Realizar balanceamento dinâmico."
+    });
+  }
+
+  // Velocidade alta + deslocamento moderado → desalinhamento
+  if((nVel === "alerta" || nVel === "critico") && nDisp === "atencao" && nAcc !== "critico"){
+    blocos.push({
+      nivel: nVel,
+      titulo: "📐 Possível Desalinhamento",
+      texto: "Velocidade elevada com deslocamento moderado pode indicar desalinhamento angular ou paralelo entre motor e carga. Verificar alinhamento com relógio comparador ou alinhador a laser. Verificar também aperto dos pés do motor (soft foot)."
+    });
+  }
+
+  // Todos os parâmetros em alerta/crítico → falha grave / iminente
+  if(
+    (nVel === "alerta"  || nVel === "critico") &&
+    (nAcc === "alerta"  || nAcc === "critico") &&
+    (nDisp === "alerta" || nDisp === "critico")
+  ){
+    blocos.push({
+      nivel: "critico",
+      titulo: "🚨 Falha Grave — Risco Iminente",
+      texto: "Todos os parâmetros em nível elevado simultaneamente indica condição de falha grave em andamento. Possível colapso de rolamento, ruptura de eixo ou soltura estrutural. PARAR O MOTOR IMEDIATAMENTE e realizar inspeção completa antes de qualquer religamento."
+    });
+  }
+
+  // Aceleração e deslocamento altos + velocidade normal → folga mecânica / ressonância
+  if(
+    (nAcc === "alerta"  || nAcc === "critico") &&
+    (nDisp === "alerta" || nDisp === "critico") &&
+    (nVel === "normal"  || nVel === "atencao")
+  ){
+    blocos.push({
+      nivel: piorNivel(nAcc, nDisp),
+      titulo: "🔩 Possível Folga Mecânica ou Ressonância",
+      texto: "Aceleração e deslocamento elevados com velocidade Vrms ainda controlada podem indicar folga mecânica (parafusos, mancais, acoplamento) ou ressonância estrutural da fundação. Verificar fixação de todos os elementos e rigidez da base."
+    });
+  }
+
+  return blocos;
+}
+
+/* =============================================================
+   RECOMENDAÇÕES POR NÍVEL GERAL
+   ============================================================= */
+function recomendacoes(nivel, blocos){
+  const recs = [];
+
+  if(nivel === "normal"){
+    recs.push("✅ Continuar monitoramento periódico conforme plano de manutenção preditiva.");
+    recs.push("📋 Registrar os valores como referência (baseline) para comparações futuras.");
+  }
+
+  if(nivel === "atencao"){
+    recs.push("🔍 Aumentar frequência de monitoramento (semanal).");
+    recs.push("📋 Registrar tendência dos valores ao longo do tempo.");
+    recs.push("🔧 Verificar lubrificação dos rolamentos e aperto geral dos elementos.");
+  }
+
+  if(nivel === "alerta"){
+    recs.push("⚠️ Programar manutenção corretiva planejada em curto prazo.");
+    recs.push("🔬 Realizar análise espectral (FFT) para identificar frequências dominantes.");
+    recs.push("🔧 Verificar alinhamento, balanceamento e condição dos rolamentos.");
+    recs.push("📋 Monitorar diariamente até a realização da manutenção.");
+  }
+
+  if(nivel === "critico"){
+    recs.push("🛑 PARAR O MOTOR IMEDIATAMENTE — risco de dano grave.");
+    recs.push("🔬 Realizar inspeção completa: rolamentos, eixo, acoplamento e fundação.");
+    recs.push("🔧 Não religar sem laudo técnico e correção da causa raiz.");
+    recs.push("📋 Registrar ocorrência e histórico de vibração para análise.");
+  }
+
+  // Recomendações específicas conforme diagnósticos combinados
+  const titulos = blocos.map(b => b.titulo);
+  if(titulos.some(t => t.includes("Rolamento"))){
+    recs.push("⚙️ Inspecionar rolamentos: verificar folga radial, contaminação e lubrificação.");
+  }
+  if(titulos.some(t => t.includes("Desequilíbrio"))){
+    recs.push("🔄 Realizar balanceamento dinâmico do rotor (ISO 21940).");
+  }
+  if(titulos.some(t => t.includes("Desalinhamento"))){
+    recs.push("📐 Efetuar alinhamento a laser entre motor e carga acoplada.");
+  }
+  if(titulos.some(t => t.includes("Folga"))){
+    recs.push("🔩 Reapertar todos os elementos de fixação e verificar integridade da base.");
+  }
+
+  return recs;
+}
+
+/* =============================================================
+   FUNÇÃO PRINCIPAL — ANALISAR
+   ============================================================= */
+function analisar(){
+
+  const cv = parseFloat(document.getElementById("cv").value) || 0;
+  if(cv <= 0){
+    alert("Informe a potência do motor em CV antes de analisar.");
+    return;
+  }
+
+  const cls  = getClasse();
+  const acc  = parseFloat(document.getElementById("acc").value)  || 0;
+  const vel  = parseFloat(document.getElementById("vel").value)  || 0;
+  const disp = parseFloat(document.getElementById("disp").value) || 0;
+
+  // Classificar cada parâmetro
+  const nVel  = nivelVel(vel,  cls);
+  const nAcc  = nivelAcc(acc);
+  const nDisp = nivelDisp(disp, cls);
+
+  // Nível geral = pior dos três
+  const geral = piorNivel(nVel, nAcc, nDisp);
+
+  // Obter blocos de diagnóstico
+  const blocos = diagnosticosCombinados(acc, vel, disp, cls, nAcc, nVel, nDisp);
+  const recs   = recomendacoes(geral, blocos);
+
+  // --- Badge principal ---
+  const badge = document.getElementById("badge");
+  const badgeMap = {
+    normal:  { texto: "🟢 BOM",           bg: "var(--green)"   },
+    atencao: { texto: "🟡 SATISFATÓRIO",  bg: "var(--yellow)"  },
+    alerta:  { texto: "🟠 INSATISFATÓRIO", bg: "var(--orange2)" },
+    critico: { texto: "🔴 INACEITÁVEL",   bg: "var(--red)"     }
+  };
+  badge.innerHTML        = badgeMap[geral].texto;
+  badge.style.background = badgeMap[geral].bg;
+
+  // --- Cor do texto do badge no amarelo ---
+  badge.style.color = (geral === "atencao") ? "#333" : "white";
+
+  // --- Montar blocos de diagnóstico ---
+  const corBorda = { normal:"var(--green)", atencao:"var(--yellow)", alerta:"var(--orange2)", critico:"var(--red)" };
+
+  let html = "";
+
+  // Classe detectada
+  html += `<div style="font-size:11px;color:#555;font-weight:bold;margin-bottom:8px;">
+             CLASSE: ${document.getElementById("classe-info").textContent}<br>
+             PONTO: ${pontoAtual === "LA" ? "L.A — Lado do Acoplamento" : "L.O.A — Lado Oposto ao Acoplamento"}
+           </div>`;
+
+  // Blocos de diagnóstico
+  blocos.forEach(b => {
+    html += `
+      <div class="diag-bloco ${b.nivel}">
+        <div class="diag-titulo">${b.titulo}</div>
+        <div class="diag-texto">${b.texto}</div>
+      </div>`;
+  });
+
+  // Recomendações
+  html += `<div class="rec-section">
+             <b>RECOMENDAÇÕES:</b>
+             ${recs.map(r => `• ${r}`).join("<br>")}
+           </div>`;
+
+  document.getElementById("diagnosis").innerHTML = html;
+
+  // --- Adicionar ao histórico ---
+  const statusTexto = badgeMap[geral].texto.replace(/[^\w\sÀ-ú]/gu, '').trim();
+  const classMap = { normal: 'bom', atencao: 'satisfatorio', alerta: 'insatisfatorio', critico: 'inaceitavel' };
+  const pontoLabel = pontoAtual === "LA" ? "L.A" : "L.O.A";
+  const agora = new Date();
+  const dataHora = agora.toLocaleDateString('pt-BR', {day:'2-digit', month:'2-digit'}) + ' · ' + agora.toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'});
+  adicionarHistorico(pontoLabel, vel, acc, disp, badgeMap[geral].texto, classMap[geral], dataHora);
+}
+
+/* =============================================================
+   PONTO DE MEDIÇÃO
+   ============================================================= */
+let pontoAtual = "LA";
+
+function selecionarPonto(ponto){
+  pontoAtual = ponto;
+  const btnLA  = document.getElementById("btn-la");
+  const btnLOA = document.getElementById("btn-loa");
+  if(ponto === "LA"){
+    btnLA.style.background  = "#1d4f91"; btnLA.style.color  = "white"; btnLA.style.borderColor  = "#1d4f91";
+    btnLOA.style.background = "white";   btnLOA.style.color = "#555";  btnLOA.style.borderColor = "#ccc";
+  } else {
+    btnLOA.style.background = "#1d4f91"; btnLOA.style.color = "white"; btnLOA.style.borderColor = "#1d4f91";
+    btnLA.style.background  = "white";   btnLA.style.color  = "#555";  btnLA.style.borderColor  = "#ccc";
+  }
+}
+
+/* =============================================================
+   LIMPAR
+   ============================================================= */
+function limpar(){
+  selecionarPonto("LA");
+  limparHistorico();
+  document.getElementById("motor-nome").value = "";
+  document.getElementById("cv").value   = "";
+  document.getElementById("acc").value  = "";
+  document.getElementById("vel").value  = "";
+  document.getElementById("disp").value = "";
+  document.getElementById("grupo-base").style.display = "none";
+  document.getElementById("classe-info").textContent  = "— Informe a potência do motor";
+  document.getElementById("badge").innerHTML        = "🟢 BOM";
+  document.getElementById("badge").style.background = "var(--green)";
+  document.getElementById("badge").style.color      = "white";
+  document.getElementById("diagnosis").innerHTML    =
+    `<div style="font-size:13px;color:#888;text-align:center;padding:20px 0;">Aguardando análise...</div>`;
+}
+
+
+/* =============================================================
+   HISTÓRICO DA SESSÃO
+   ============================================================= */
+let historico = []; // { ponto, vel, disp, acc, status, statusClass }
+
+function adicionarHistorico(ponto, vel, acc, disp, status, statusClass, dataHora) {
+  historico.push({ ponto, vel, acc, disp, status, statusClass, dataHora });
+  renderHistorico();
+  atualizarRelatorio();
+}
+
+function renderHistorico() {
+  const lista = document.getElementById("historico-lista");
+  if (historico.length === 0) {
+    lista.innerHTML = '<li style="font-size:12px;color:#aaa;text-align:center;padding:6px 0;">Nenhuma medição registrada</li>';
+    return;
+  }
+  lista.innerHTML = historico.map((m, i) => `
+    <li class="historico-item ${m.statusClass}">
+      <div style="flex:1">
+        <div style="display:flex;align-items:center;gap:6px">
+          <span class="hi-ponto">${m.ponto}</span>
+          <span class="hi-val">${m.vel > 0 ? m.vel.toFixed(1) + ' mm/s' : '—'}</span>
+          <span class="hi-status">${m.status}</span>
+        </div>
+        <div style="font-size:10px;color:#aaa;margin-top:2px">${m.dataHora}</div>
+      </div>
+      <button class="hi-del" onclick="removerHistorico(${i})" title="Remover">✕</button>
+    </li>`).join('');
+}
+
+function removerHistorico(idx) {
+  historico.splice(idx, 1);
+  renderHistorico();
+  atualizarRelatorio();
+}
+
+function limparHistorico() {
+  historico = [];
+  renderHistorico();
+  atualizarRelatorio();
+}
+
+/* =============================================================
+   RELATÓRIO DE TEXTO
+   ============================================================= */
+function atualizarRelatorio() {
+  const secao  = document.getElementById("relatorio-section");
+  const textarea = document.getElementById("relatorio-texto");
+
+  if (historico.length === 0) {
+    secao.style.display = "none";
+    return;
+  }
+
+  secao.style.display = "block";
+
+  const nomeMotor = document.getElementById("motor-nome").value.trim();
+  let linhas = "";
+  if (nomeMotor) linhas += `Motor: ${nomeMotor}\n`;
+  linhas += "Realizada medição de vibração:\n";
+  historico.forEach(m => {
+    let linha = `• ${m.ponto} = `;
+    if (m.vel > 0)  linha += `${m.vel.toFixed(1)} mm/s`;
+    if (m.acc > 0)  linha += ` | Acel.: ${m.acc.toFixed(1)} m/s²`;
+    if (m.disp > 0) linha += ` | Desl.: ${m.disp.toFixed(3)} mm`;
+    linha += ` — ${m.status}`;
+    linhas += linha + "\n";
+  });
+
+  textarea.value = linhas;
+}
+
+function copiarRelatorio() {
+  const textarea = document.getElementById("relatorio-texto");
+  textarea.select();
+  textarea.setSelectionRange(0, 99999);
+  navigator.clipboard.writeText(textarea.value).then(() => {
+    const msg = document.getElementById("copiado-msg");
+    msg.style.display = "block";
+    setTimeout(() => { msg.style.display = "none"; }, 2000);
+  }).catch(() => {
+    document.execCommand("copy");
+    const msg = document.getElementById("copiado-msg");
+    msg.style.display = "block";
+    setTimeout(() => { msg.style.display = "none"; }, 2000);
+  });
+}
+
+</script>
+
+
+<script>
+// Inline Service Worker — funciona offline sem arquivos externos
+if('serviceWorker' in navigator){
+  const swCode = `
+    const CACHE = 'ip63b-v1';
+    self.addEventListener('install', e => {
+      self.skipWaiting();
+    });
+    self.addEventListener('activate', e => {
+      self.clients.claim();
+    });
+    self.addEventListener('fetch', e => {
+      e.respondWith(
+        caches.match(e.request).then(cached => {
+          return cached || fetch(e.request).then(response => {
+            return caches.open(CACHE).then(cache => {
+              cache.put(e.request, response.clone());
+              return response;
+            });
+          });
+        }).catch(() => cached)
+      );
+    });
+  `;
+  const blob = new Blob([swCode], {type: 'application/javascript'});
+  const swUrl = URL.createObjectURL(blob);
+  navigator.serviceWorker.register(swUrl)
+    .then(() => console.log('SW inline registrado'))
+    .catch(e => console.log('SW erro:', e));
+}
+</script>
+
+</body>
+</html>
