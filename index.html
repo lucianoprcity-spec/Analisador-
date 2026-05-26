@@ -364,9 +364,27 @@ button{
   <meta name="apple-mobile-web-app-title" content="IP-63B">
   <meta name="application-name" content="IP-63B">
   <meta name="theme-color" content="#1d4f91">
-  <link rel="manifest" href="manifest.json">
-  <link rel="apple-touch-icon" href="icon-192.png">
 
+
+  <script>
+  // Manifest inline para PWA
+  const manifestData = {
+    name: "Analisador de Vibração IP-63B",
+    short_name: "IP-63B",
+    description: "Analisador de vibração de motores elétricos — ISO 10816-1",
+    start_url: "./",
+    display: "standalone",
+    background_color: "#d9d9d9",
+    theme_color: "#1d4f91",
+    orientation: "portrait"
+  };
+  const blob = new Blob([JSON.stringify(manifestData)], {type: 'application/json'});
+  const manifestUrl = URL.createObjectURL(blob);
+  const link = document.createElement('link');
+  link.rel = 'manifest';
+  link.href = manifestUrl;
+  document.head.appendChild(link);
+  </script>
 </head>
 <body>
 
@@ -613,7 +631,16 @@ function diagnosticosCombinados(acc, vel, disp, cls, nAcc, nVel, nDisp){
 
   const blocos = [];
 
-  /* --- 1. VELOCIDADE (parâmetro principal ISO 10816-1) --- */
+  /* --- 1. ACELERAÇÃO (indicador de impactos / rolamentos) --- */
+  const textoAcc = {
+    normal:  `Aceleração ${acc.toFixed(2)} m/s² — nível normal. Sem indícios de impactos mecânicos ou falha em rolamentos.`,
+    atencao: `Aceleração ${acc.toFixed(2)} m/s² — nível elevado. Possível início de desgaste em rolamento ou lubrificação insuficiente. Monitorar com frequência.`,
+    alerta:  `Aceleração ${acc.toFixed(2)} m/s² — nível alto. Provável falha em desenvolvimento no rolamento (pitting, trinca na pista ou elemento rolante). Planejar substituição.`,
+    critico: `Aceleração ${acc.toFixed(2)} m/s² — nível crítico. Falha grave em rolamento ou impacto mecânico severo. Risco de travamento. PARAR imediatamente.`
+  };
+  blocos.push({ nivel: nAcc, titulo: "Aceleração / Rolamentos", texto: textoAcc[nAcc] });
+
+  /* --- 2. VELOCIDADE (parâmetro principal ISO 10816-1) --- */
   const lv = LIMITES_VEL[cls];
   const textoVel = {
     normal:  `Velocidade ${vel.toFixed(2)} mm/s — dentro da Zona A da ISO 10816-1. Motor operando em condição normal.`,
@@ -622,15 +649,6 @@ function diagnosticosCombinados(acc, vel, disp, cls, nAcc, nVel, nDisp){
     critico: `Velocidade ${vel.toFixed(2)} mm/s — Zona D da ISO 10816-1. Vibração PERIGOSA. Risco imediato de dano ao motor, rolamentos e estrutura. PARAR o equipamento.`
   };
   blocos.push({ nivel: nVel, titulo: "Velocidade de Vibração (Vrms)", texto: textoVel[nVel] });
-
-  /* --- 2. ACELERAÇÃO (indicador de impactos / rolamentos) --- */
-  const textoAcc = {
-    normal:  `Aceleração ${acc.toFixed(2)} m/s² — nível normal. Sem indícios de impactos mecânicos ou falha em rolamentos.`,
-    atencao: `Aceleração ${acc.toFixed(2)} m/s² — nível elevado. Possível início de desgaste em rolamento ou lubrificação insuficiente. Monitorar com frequência.`,
-    alerta:  `Aceleração ${acc.toFixed(2)} m/s² — nível alto. Provável falha em desenvolvimento no rolamento (pitting, trinca na pista ou elemento rolante). Planejar substituição.`,
-    critico: `Aceleração ${acc.toFixed(2)} m/s² — nível crítico. Falha grave em rolamento ou impacto mecânico severo. Risco de travamento. PARAR imediatamente.`
-  };
-  blocos.push({ nivel: nAcc, titulo: "Aceleração / Rolamentos", texto: textoAcc[nAcc] });
 
   /* --- 3. DESLOCAMENTO (indicador de folga / desequilíbrio) --- */
   const ld = LIMITES_DISP[cls];
@@ -960,13 +978,35 @@ function copiarRelatorio() {
 
 
 <script>
-  if('serviceWorker' in navigator){
-    window.addEventListener('load', () => {
-      navigator.serviceWorker.register('sw.js')
-        .then(() => console.log('Service Worker registrado'))
-        .catch(e => console.log('Erro SW:', e));
+// Inline Service Worker — funciona offline sem arquivos externos
+if('serviceWorker' in navigator){
+  const swCode = `
+    const CACHE = 'ip63b-v1';
+    self.addEventListener('install', e => {
+      self.skipWaiting();
     });
-  }
+    self.addEventListener('activate', e => {
+      self.clients.claim();
+    });
+    self.addEventListener('fetch', e => {
+      e.respondWith(
+        caches.match(e.request).then(cached => {
+          return cached || fetch(e.request).then(response => {
+            return caches.open(CACHE).then(cache => {
+              cache.put(e.request, response.clone());
+              return response;
+            });
+          });
+        }).catch(() => cached)
+      );
+    });
+  `;
+  const blob = new Blob([swCode], {type: 'application/javascript'});
+  const swUrl = URL.createObjectURL(blob);
+  navigator.serviceWorker.register(swUrl)
+    .then(() => console.log('SW inline registrado'))
+    .catch(e => console.log('SW erro:', e));
+}
 </script>
 
 </body>
