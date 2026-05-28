@@ -4,6 +4,179 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Analisador de Vibração IP-63B</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js">
+/* =============================================================
+   DATA E HORA NO TOPO
+   ============================================================= */
+function atualizarRelogio() {
+  const agora = new Date();
+  const dias = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
+  const dia  = String(agora.getDate()).padStart(2,'0');
+  const mes  = String(agora.getMonth()+1).padStart(2,'0');
+  const ano  = agora.getFullYear();
+  const hora = String(agora.getHours()).padStart(2,'0');
+  const min  = String(agora.getMinutes()).padStart(2,'0');
+  const seg  = String(agora.getSeconds()).padStart(2,'0');
+  const diaSem = dias[agora.getDay()];
+  document.getElementById('datetime-bar').textContent =
+    `${diaSem}, ${dia}/${mes}/${ano}  •  ${hora}:${min}:${seg}`;
+}
+setInterval(atualizarRelogio, 1000);
+atualizarRelogio();
+
+
+
+/* =============================================================
+   GERAR PDF DO RELATÓRIO
+   ============================================================= */
+function gerarPDF() {
+  if (window._jspdfFailed || !window.jspdf) {
+    alert('Para gerar PDF é necessário conexão com internet.\nAcesse o app pelo link online:\nhttps://lucianoprcity-spec.github.io/ip63b/');
+    return;
+  }
+  const { jsPDF } = window.jspdf;
+  if (!jsPDF) { alert('Biblioteca PDF não carregada. Verifique a conexão com a internet.'); return; }
+
+  const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+  const W = 210; const M = 15;
+  let y = 20;
+
+  // Cabeçalho
+  doc.setFillColor(29, 79, 145);
+  doc.rect(0, 0, W, 28, 'F');
+  doc.setTextColor(255,255,255);
+  doc.setFont('helvetica','bold');
+  doc.setFontSize(16);
+  doc.text('RELATÓRIO DE ANÁLISE DE VIBRAÇÃO', W/2, 12, { align:'center' });
+  doc.setFontSize(9);
+  doc.setFont('helvetica','normal');
+  doc.text('ISO 10816-1', W/2, 20, { align:'center' });
+
+  // Data/hora
+  const agora = new Date();
+  const dtStr = `${String(agora.getDate()).padStart(2,'0')}/${String(agora.getMonth()+1).padStart(2,'0')}/${agora.getFullYear()}  ${String(agora.getHours()).padStart(2,'0')}:${String(agora.getMinutes()).padStart(2,'0')}`;
+  doc.setTextColor(200,220,255);
+  doc.text(`Data: ${dtStr}`, W/2, 26, { align:'center' });
+
+  y = 36;
+
+  // Nome do motor
+  const nome   = document.getElementById('motor-nome').value.trim() || 'Não informado';
+  const classe = document.getElementById('classe-info').textContent;
+
+  doc.setFillColor(240,244,255);
+  doc.rect(M, y, W-2*M, 14, 'F');
+  doc.setDrawColor(200,210,230);
+  doc.rect(M, y, W-2*M, 14, 'S');
+  doc.setTextColor(29,79,145);
+  doc.setFont('helvetica','bold');
+  doc.setFontSize(10);
+  doc.text('EQUIPAMENTO:', M+4, y+6);
+  doc.setTextColor(50,50,50);
+  doc.setFont('helvetica','normal');
+  doc.text(nome, M+40, y+6);
+  doc.setTextColor(29,79,145);
+  doc.setFont('helvetica','bold');
+  doc.text('CLASSE:', M+4, y+11);
+  doc.setTextColor(50,50,50);
+  doc.setFont('helvetica','normal');
+  doc.setFontSize(9);
+  doc.text(classe, M+22, y+11);
+  y += 20;
+
+  // Função para bloco de ponto
+  function blocoPonto(ponto, dados) {
+    if (!dados) return;
+    const label = ponto === 'LA' ? 'L.A — Lado do Acoplamento' : 'L.O.A — Lado Oposto ao Acoplamento';
+
+    // Titulo do ponto
+    doc.setFillColor(29,79,145);
+    doc.rect(M, y, W-2*M, 9, 'F');
+    doc.setTextColor(255,255,255);
+    doc.setFont('helvetica','bold');
+    doc.setFontSize(10);
+    doc.text(label, M+4, y+6);
+    y += 12;
+
+    // Valores
+    const linhas = [
+      ['Aceleração',   dados.acc  > 0 ? dados.acc.toFixed(1)  + ' m/s²'  : '—'],
+      ['Velocidade',   dados.vel  > 0 ? dados.vel.toFixed(1)  + ' mm/s'  : '—'],
+      ['Deslocamento', dados.disp > 0 ? dados.disp.toFixed(3) + ' mm'    : '—'],
+    ];
+    linhas.forEach(([k,v], i) => {
+      doc.setFillColor(i%2===0 ? 248:255, i%2===0 ? 250:255, i%2===0 ? 255:255);
+      doc.rect(M, y, W-2*M, 8, 'F');
+      doc.setDrawColor(220,225,235);
+      doc.rect(M, y, W-2*M, 8, 'S');
+      doc.setTextColor(100,100,100);
+      doc.setFont('helvetica','bold');
+      doc.setFontSize(9);
+      doc.text(k + ':', M+4, y+5.5);
+      doc.setTextColor(50,50,50);
+      doc.setFont('helvetica','normal');
+      doc.text(v, M+38, y+5.5);
+      y += 8;
+    });
+
+    // Badge resultado
+    const corMap = {
+      'var(--green)':   [76,175,80],
+      'var(--yellow)':  [255,193,7],
+      'var(--orange2)': [255,152,0],
+      'var(--red)':     [244,67,54],
+    };
+    const rgb = corMap[dados.corBadge] || [29,79,145];
+    doc.setFillColor(...rgb);
+    doc.rect(M, y, W-2*M, 10, 'F');
+    doc.setTextColor(255,255,255);
+    doc.setFont('helvetica','bold');
+    doc.setFontSize(11);
+    // Remove emojis from resultado text
+    const resText = dados.resultado.replace(/[^\w\sÀ-ú]/gu, '').trim();
+    doc.text(resText, W/2, y+7, { align:'center' });
+    y += 14;
+  }
+
+  blocoPonto('LA',  dadosLA);
+  blocoPonto('LOA', dadosLOA);
+
+  // Texto do relatorio
+  const textoRel = document.getElementById('relatorio-texto');
+  if (textoRel && textoRel.value.trim()) {
+    y += 4;
+    doc.setFillColor(29,79,145);
+    doc.rect(M, y, W-2*M, 9, 'F');
+    doc.setTextColor(255,255,255);
+    doc.setFont('helvetica','bold');
+    doc.setFontSize(10);
+    doc.text('TEXTO DO RELATÓRIO', M+4, y+6);
+    y += 12;
+    doc.setTextColor(50,50,50);
+    doc.setFont('helvetica','normal');
+    doc.setFontSize(9);
+    const linhasRel = doc.splitTextToSize(textoRel.value, W-2*M-4);
+    linhasRel.forEach(linha => {
+      if (y > 270) { doc.addPage(); y = 20; }
+      doc.text(linha, M+2, y);
+      y += 5;
+    });
+  }
+
+  // Rodapé
+  doc.setFillColor(240,244,255);
+  doc.rect(0, 285, W, 12, 'F');
+  doc.setTextColor(100,100,100);
+  doc.setFontSize(8);
+  doc.setFont('helvetica','normal');
+  doc.text('Desenvolvido por Luciano Souza e Valdemir Bartelli  •  ISO 10816-1', W/2, 292, { align:'center' });
+
+  // Save
+  const nomeArq = (nome !== 'Não informado' ? nome : 'relatorio').replace(/[^a-zA-Z0-9]/g,'_');
+  doc.save(`Vibracao_${nomeArq}_${String(agora.getDate()).padStart(2,'0')}${String(agora.getMonth()+1).padStart(2,'0')}${agora.getFullYear()}.pdf`);
+}
+
+</script>
 
 <style>
 
@@ -355,6 +528,95 @@ button{
 .input-nome::placeholder { color: #bbb; font-weight: normal; }
 .input-nome:focus { border-bottom-color: var(--orange); }
 
+
+
+/* Navegador de resultados salvos L.A / L.O.A */
+.nav-resultados {
+    display: none;
+    margin-top: 16px;
+    border-top: 1px solid #bbb;
+    padding-top: 12px;
+}
+.nav-resultados-title {
+    font-size: 11px;
+    font-weight: bold;
+    color: #555;
+    letter-spacing: 0.5px;
+    margin-bottom: 8px;
+}
+.nav-botoes {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 12px;
+}
+.nav-btn {
+    flex: 1;
+    padding: 10px;
+    border-radius: 6px;
+    border: 2px solid #ccc;
+    background: white;
+    color: #555;
+    font-weight: bold;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-align: center;
+}
+.nav-btn.ativo {
+    border-color: #1d4f91;
+    background: #1d4f91;
+    color: white;
+}
+.nav-btn.tem-dados {
+    border-color: #4CAF50;
+    color: #4CAF50;
+}
+.nav-btn.tem-dados.ativo {
+    background: #1d4f91;
+    border-color: #1d4f91;
+    color: white;
+}
+.nav-resultado-box {
+    background: white;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    padding: 10px;
+    font-size: 13px;
+    color: #333;
+    line-height: 1.6;
+}
+
+
+/* Data e hora no topo */
+.datetime-bar {
+    background: #1d4f91;
+    color: white;
+    font-size: 11px;
+    text-align: center;
+    padding: 5px 10px;
+    letter-spacing: 0.5px;
+    margin: -18px -18px 14px -18px;
+    font-weight: bold;
+}
+
+/* Botao PDF */
+.btn-pdf {
+    width: 100%;
+    background: #1d4f91;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    padding: 12px;
+    font-weight: bold;
+    font-size: 14px;
+    cursor: pointer;
+    margin-top: 10px;
+    letter-spacing: 0.5px;
+}
+.btn-pdf:hover { background: #163d72; }
+.btn-pdf:active { transform: scale(0.98); }
+
+
 </style>
 
   <!-- PWA -->
@@ -384,13 +646,97 @@ button{
   link.rel = 'manifest';
   link.href = manifestUrl;
   document.head.appendChild(link);
-  </script>
+  
+/* =============================================================
+   NAVEGADOR DE RESULTADOS SALVOS L.A / L.O.A
+   ============================================================= */
+let dadosLA  = null;
+let dadosLOA = null;
+
+function salvarResultado(ponto, acc, vel, disp, resultado, corBadge, diagHTML) {
+  // Salva disp como string com ponto para evitar conversao para virgula
+  const dispStr = disp > 0 ? String(disp).replace(',', '.') : 0;
+  const dados = { acc, vel, disp: parseFloat(dispStr) || 0, dispStr, resultado, corBadge, diagHTML };
+  if (ponto === 'LA')  dadosLA  = dados;
+  if (ponto === 'LOA') dadosLOA = dados;
+}
+
+function verResultadoSalvo(ponto) {
+  const dados = ponto === 'LA' ? dadosLA : dadosLOA;
+  const btnLA  = document.getElementById('nav-btn-la');
+  const btnLOA = document.getElementById('nav-btn-loa');
+  const box    = document.getElementById('nav-resultado-box');
+
+  // Atualiza botoes ativos
+  btnLA.classList.toggle('ativo', ponto === 'LA');
+  btnLOA.classList.toggle('ativo', ponto === 'LOA');
+
+  if (!dados) {
+    box.style.display = 'block';
+    box.innerHTML = '<span style="color:#aaa;font-style:italic;font-size:12px">Nenhuma análise salva para este ponto ainda.</span>';
+    return;
+  }
+
+  box.style.display = 'block';
+  box.innerHTML = `
+    <div style="font-weight:bold;font-size:12px;color:#555;margin-bottom:6px">
+      PONTO: ${ponto === 'LA' ? 'L.A — Lado do Acoplamento' : 'L.O.A — Lado Oposto ao Acoplamento'}
+    </div>
+    <div style="display:flex;gap:8px;margin-bottom:8px;flex-wrap:wrap">
+      ${dados.acc  > 0 ? `<span style="background:#f0f4ff;padding:3px 8px;border-radius:4px;font-size:12px">Acel: <b>${dados.acc.toFixed(1)} m/s²</b></span>` : ''}
+      ${dados.vel  > 0 ? `<span style="background:#f0f4ff;padding:3px 8px;border-radius:4px;font-size:12px">Vel: <b>${dados.vel.toFixed(1)} mm/s</b></span>` : ''}
+      ${dados.disp > 0 ? `<span style="background:#f0f4ff;padding:3px 8px;border-radius:4px;font-size:12px">Desl: <b>${dados.disp.toFixed(3)} mm</b></span>` : ''}
+    </div>
+    <div style="padding:6px 10px;border-radius:4px;color:white;font-weight:bold;font-size:14px;text-align:center;background:${dados.corBadge};margin-bottom:8px">
+      ${dados.resultado}
+    </div>
+    ${dados.diagHTML}
+  `;
+}
+
+
+/* =============================================================
+   CONVERTER VIRGULA PARA PONTO AUTOMATICAMENTE
+   ============================================================= */
+document.addEventListener('DOMContentLoaded', function() {
+  const campos = ['cv', 'acc', 'vel', 'disp'];
+  campos.forEach(id => {
+    const el = document.getElementById(id);
+    if (!el) return;
+
+    // Converte virgula para ponto ao digitar
+    el.addEventListener('keydown', function(e) {
+      if (e.key === ',') {
+        e.preventDefault();
+        const start = this.selectionStart;
+        const end   = this.selectionEnd;
+        const val   = this.value;
+        this.value  = val.substring(0, start) + '.' + val.substring(end);
+        this.setSelectionRange(start + 1, start + 1);
+        this.dispatchEvent(new Event('input'));
+      }
+    });
+
+    // Remove virgula caso venha de colar texto
+    el.addEventListener('input', function() {
+      if (this.value.includes(',')) {
+        const pos = this.selectionStart;
+        this.value = this.value.replace(/,/g, '.');
+        try { this.setSelectionRange(pos, pos); } catch(e) {}
+        this.dispatchEvent(new Event('change'));
+      }
+    });
+  });
+});
+
+</script>
 </head>
 <body>
 
 <div class="device">
 
-  <div class="header">ANALISADOR DE VIBRAÇÃO IP-63B</div>
+  <div class="header">ANALISADOR DE VIBRAÇÃO</div>
+<div class="datetime-bar" id="datetime-bar"></div>
 
   <div class="display">
 
@@ -404,7 +750,7 @@ button{
     <div class="group">
       <div class="label">POTÊNCIA DO MOTOR</div>
       <div class="value">
-        <input type="number" id="cv" placeholder="0" min="0" oninput="detectarClasse()">
+        <input type="number" id="cv" placeholder="0" min="0" oninput="detectarClasse()" inputmode="decimal">
         <div class="unit">CV</div>
       </div>
     </div>
@@ -474,6 +820,12 @@ button{
       <span>INACEITÁVEL</span>
     </div>
 
+    <!-- BOTÕES -->
+    <div class="buttons">
+      <button class="analyze" onclick="analisar()">ANALISAR</button>
+      <button class="clear"   onclick="limpar()">LIMPAR</button>
+    </div>
+
     <!-- RESULTADO -->
     <div class="result">
       <div class="badge" id="badge" style="background:var(--green)">🟢 BOM</div>
@@ -482,11 +834,7 @@ button{
       </div>
     </div>
 
-    <!-- BOTÕES -->
-    <div class="buttons">
-      <button class="analyze" onclick="analisar()">ANALISAR</button>
-      <button class="clear"   onclick="limpar()">LIMPAR</button>
-    </div>
+
 
 
     <!-- HISTÓRICO DA SESSÃO -->
@@ -506,7 +854,9 @@ button{
       <div class="copiado-msg" id="copiado-msg">✅ Texto copiado!</div>
     </div>
 
-    <div class="footer">ISO 10816-1 · IP-63B · Impac</div>
+    <button class="btn-pdf" onclick="gerarPDF()">📄 GERAR RELATÓRIO PDF</button>
+
+    <div class="footer">ISO 10816-1</div>
     <div class="footer" style="margin-top:4px;font-size:10px;color:#999;">Desenvolvido por Luciano Souza e Valdemir Bartelli</div>
 
   </div>
@@ -844,6 +1194,7 @@ function analisar(){
   const agora = new Date();
   const dataHora = agora.toLocaleDateString('pt-BR', {day:'2-digit', month:'2-digit'}) + ' · ' + agora.toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'});
   adicionarHistorico(pontoLabel, vel, acc, disp, badgeMap[geral].texto, classMap[geral], dataHora);
+  salvarResultado(pontoAtual, acc, vel, disp, badgeMap[geral].texto, badgeMap[geral].bg, document.getElementById("diagnosis").innerHTML);
 }
 
 /* =============================================================
@@ -852,6 +1203,21 @@ function analisar(){
 let pontoAtual = "LA";
 
 function selecionarPonto(ponto){
+  // Salva o diagnostico atual antes de trocar
+  if(pontoAtual && document.getElementById("diagnosis").innerHTML.trim() !== "" &&
+     !document.getElementById("diagnosis").innerHTML.includes("Aguardando")) {
+    const badge = document.getElementById("badge");
+    salvarResultado(
+      pontoAtual,
+      parseFloat(document.getElementById("acc").value) || 0,
+      parseFloat(document.getElementById("vel").value) || 0,
+      parseFloat(document.getElementById("disp").value) || 0,
+      badge.innerHTML,
+      badge.style.background,
+      document.getElementById("diagnosis").innerHTML
+    );
+  }
+
   pontoAtual = ponto;
   const btnLA  = document.getElementById("btn-la");
   const btnLOA = document.getElementById("btn-loa");
@@ -862,6 +1228,39 @@ function selecionarPonto(ponto){
     btnLOA.style.background = "#1d4f91"; btnLOA.style.color = "white"; btnLOA.style.borderColor = "#1d4f91";
     btnLA.style.background  = "white";   btnLA.style.color  = "#555";  btnLA.style.borderColor  = "#ccc";
   }
+
+  // Se tem dados salvos para este ponto, mostra — senão limpa os campos
+  const dados = ponto === "LA" ? dadosLA : dadosLOA;
+  if(dados) {
+    // Restaura os valores nos campos
+    document.getElementById("acc").value  = dados.acc  > 0 ? String(dados.acc).replace(',', '.') : "";
+    document.getElementById("vel").value  = dados.vel  > 0 ? String(dados.vel).replace(',', '.') : "";
+    // Usa a string original salva para evitar conversao de ponto para virgula
+    if (dados.disp > 0) {
+      const dispInput = document.getElementById("disp");
+      dispInput.setAttribute("type","text");
+      dispInput.value = dados.dispStr || String(dados.disp).replace(',','.');
+      dispInput.setAttribute("type","number");
+    } else {
+      document.getElementById("disp").value = "";
+    }
+    // Restaura badge e diagnostico
+    const badge = document.getElementById("badge");
+    badge.innerHTML        = dados.resultado;
+    badge.style.background = dados.corBadge;
+    badge.style.color      = dados.corBadge === "var(--yellow)" ? "#333" : "white";
+    document.getElementById("diagnosis").innerHTML = dados.diagHTML;
+  } else {
+    // Limpa campos para nova medição
+    document.getElementById("acc").value  = "";
+    document.getElementById("vel").value  = "";
+    document.getElementById("disp").value = "";
+    document.getElementById("badge").innerHTML        = "🟢 BOM";
+    document.getElementById("badge").style.background = "var(--green)";
+    document.getElementById("badge").style.color      = "white";
+    document.getElementById("diagnosis").innerHTML    =
+      '<div style="font-size:13px;color:#888;text-align:center;padding:20px 0;">Aguardando análise...</div>';
+  }
 }
 
 /* =============================================================
@@ -870,6 +1269,7 @@ function selecionarPonto(ponto){
 function limpar(){
   selecionarPonto("LA");
   limparHistorico();
+  dadosLA = null; dadosLOA = null;
   document.getElementById("motor-nome").value = "";
   document.getElementById("cv").value   = "";
   document.getElementById("acc").value  = "";
