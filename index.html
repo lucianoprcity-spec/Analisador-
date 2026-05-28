@@ -599,22 +599,6 @@ button{
     font-weight: bold;
 }
 
-/* Botao PDF */
-.btn-pdf {
-    width: 100%;
-    background: #1d4f91;
-    color: white;
-    border: none;
-    border-radius: 8px;
-    padding: 12px;
-    font-weight: bold;
-    font-size: 14px;
-    cursor: pointer;
-    margin-top: 10px;
-    letter-spacing: 0.5px;
-}
-.btn-pdf:hover { background: #163d72; }
-.btn-pdf:active { transform: scale(0.98); }
 
 
 </style>
@@ -853,8 +837,6 @@ document.addEventListener('DOMContentLoaded', function() {
       <button class="btn-copiar" onclick="copiarRelatorio()">📋 COPIAR TEXTO</button>
       <div class="copiado-msg" id="copiado-msg">✅ Texto copiado!</div>
     </div>
-
-    <button class="btn-pdf" onclick="gerarPDF()">📄 GERAR RELATÓRIO PDF</button>
 
     <div class="footer">ISO 10816-1</div>
     <div class="footer" style="margin-top:4px;font-size:10px;color:#999;">Desenvolvido por Luciano Souza e Valdemir Bartelli</div>
@@ -1235,15 +1217,7 @@ function selecionarPonto(ponto){
     // Restaura os valores nos campos
     document.getElementById("acc").value  = dados.acc  > 0 ? String(dados.acc).replace(',', '.') : "";
     document.getElementById("vel").value  = dados.vel  > 0 ? String(dados.vel).replace(',', '.') : "";
-    // Usa a string original salva para evitar conversao de ponto para virgula
-    if (dados.disp > 0) {
-      const dispInput = document.getElementById("disp");
-      dispInput.setAttribute("type","text");
-      dispInput.value = dados.dispStr || String(dados.disp).replace(',','.');
-      dispInput.setAttribute("type","number");
-    } else {
-      document.getElementById("disp").value = "";
-    }
+    document.getElementById("disp").value = dados.disp > 0 ? String(dados.dispStr || dados.disp).replace(',', '.') : "";
     // Restaura badge e diagnostico
     const badge = document.getElementById("badge");
     badge.innerHTML        = dados.resultado;
