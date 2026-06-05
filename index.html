@@ -131,7 +131,7 @@ body{background:var(--bg);display:flex;justify-content:center;align-items:flex-s
    LAYOUT WIDE — tablet, desktop, landscape
    (≥ 700px ou landscape com min-width 600px)
 ══════════════════════════════════════════════ */
-@media (min-width:860px) {
+@media (min-width:700px), (orientation:landscape) and (min-width:600px) {
 
   body{
     background:var(--bg);
@@ -934,9 +934,9 @@ if("serviceWorker" in navigator){
 <script>
 // ─── DETECTAR LAYOUT E MOSTRAR O CORRETO ───
 function aplicarLayout(){
-  var wide = window.innerWidth >= 860;
-  document.querySelector(".device").style.display    = wide ? "none" : "block";
-  document.getElementById("wide-root").style.display = wide ? "flex" : "none";
+  var wide = window.innerWidth >= 700 || (window.innerWidth >= 600 && window.innerHeight < window.innerWidth);
+  document.querySelector(".device").style.display     = wide ? "none"  : "block";
+  document.getElementById("wide-root").style.display  = wide ? "flex"  : "none";
 }
 aplicarLayout();
 window.addEventListener("resize", aplicarLayout);
