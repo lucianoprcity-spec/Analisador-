@@ -616,18 +616,18 @@ function atualizarRelogio(){
 setInterval(atualizarRelogio,1000);
 atualizarRelogio();
 
-// ─── VÍRGULA → PONTO ───
+// ─── VÍRGULA → PONTO (converte silenciosamente ao digitar) ───
 document.addEventListener("DOMContentLoaded",function(){
   ["cv","acc","vel","disp"].forEach(function(id){
     var el=document.getElementById(id); if(!el) return;
-    el.addEventListener("keydown",function(e){
-      if(e.key===","){e.preventDefault();var s=this.selectionStart,v=this.value;this.value=v.substring(0,s)+"."+v.substring(this.selectionEnd);this.setSelectionRange(s+1,s+1);}
-    });
     el.addEventListener("input",function(){
-      if(this.value.indexOf(",")>=0){var p=this.selectionStart;this.value=this.value.replace(/,/g,".");try{this.setSelectionRange(p,p);}catch(ex){}}
+      if(this.value.indexOf(",")>=0){
+        var p=this.selectionStart;
+        this.value=this.value.replace(/,/g,".");
+        try{this.setSelectionRange(p,p);}catch(ex){}
+      }
     });
   });
-  // Não mostra nenhum ponto ao iniciar — usuário escolhe ponto + direção
   atualizarBotoes();
 });
 
@@ -1091,9 +1091,13 @@ copiarRelatorio = function(){
     if(id==="cv") detectarClasse();
     if(id==="acc"||id==="vel"||id==="disp") syncField(wid, this.value);
   });
-  // vírgula → ponto
-  el.addEventListener("keydown", function(e){
-    if(e.key===","){e.preventDefault();var s=this.selectionStart,v=this.value;this.value=v.substring(0,s)+"."+v.substring(this.selectionEnd);this.setSelectionRange(s+1,s+1);}
+  // vírgula → ponto (silencioso)
+  el.addEventListener("input", function(){
+    if(this.value.indexOf(",")>=0){
+      var p=this.selectionStart;
+      this.value=this.value.replace(/,/g,".");
+      try{this.setSelectionRange(p,p);}catch(ex){}
+    }
   });
 });
 </script>
