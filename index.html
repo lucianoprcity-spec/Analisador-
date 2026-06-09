@@ -134,7 +134,7 @@ body{background:var(--bg);display:flex;justify-content:center;align-items:flex-s
    LAYOUT WIDE — tablet, desktop, landscape
    (≥ 700px ou landscape com min-width 600px)
 ══════════════════════════════════════════════ */
-@media (min-width:860px) {
+@media (min-width:860px), (orientation:landscape) {
 
   body{
     background:var(--bg);
@@ -310,7 +310,7 @@ body{background:var(--bg);display:flex;justify-content:center;align-items:flex-s
 ════════════════════════════════════ -->
 <div class="device">
   <div class="app-header">ANALISADOR DE VIBRAÇÃO</div>
-  <div class="datetime-bar" id="datetime-bar-mobile">Carregando...</div>
+  <div class="datetime-bar" id="datetime-bar-mobile" style="display:none"></div>
   <div class="display">
 
     <div class="group">
@@ -1050,9 +1050,10 @@ if("serviceWorker" in navigator){
 <script>
 // ─── DETECTAR LAYOUT E MOSTRAR O CORRETO ───
 function aplicarLayout(){
-  var wide = window.innerWidth >= 860;
-  document.querySelector(".device").style.display    = wide ? "none" : "block";
-  document.getElementById("wide-root").style.display = wide ? "flex" : "none";
+  var landscape = window.innerWidth > window.innerHeight;
+  var wide = landscape || window.innerWidth >= 860;
+  document.querySelector(".device").style.display    = wide ? "none"  : "block";
+  document.getElementById("wide-root").style.display = wide ? "flex"  : "none";
 }
 aplicarLayout();
 window.addEventListener("resize", aplicarLayout);
