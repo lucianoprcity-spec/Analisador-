@@ -881,49 +881,156 @@ function gerarPDF(){
   var doc=new jsPDF({orientation:"portrait",unit:"mm",format:"a4"});
   var W=210,M=15,y=20;
   var fmt=function(n){return String(n).padStart(2,"0");};
+
+  // Remove emojis e caracteres especiais do texto
+  function limpar(txt){return(txt||"").replace(/[\u{1F000}-\u{1FFFF}]|[\u2600-\u27BF]|[\uE000-\uF8FF]/gu,"").replace(/[^\w\sÀ-úà-ú.,;:()\-\/°²³%]/g,"").trim();}
+
+  // Recomendações por nível (sem emojis)
+  function recsTexto(nivel, diagHTML){
+    var r=[];
+    if(nivel==="normal"){
+      r.push("Continuar monitoramento periodico conforme plano de manutencao preditiva.");
+      r.push("Registrar os valores como referencia (baseline) para comparacoes futuras.");
+    }
+    if(nivel==="atencao"){
+      r.push("Aumentar frequencia de monitoramento (semanal).");
+      r.push("Verificar lubrificacao dos rolamentos e aperto geral dos elementos.");
+    }
+    if(nivel==="alerta"){
+      r.push("Programar manutencao corretiva planejada em curto prazo.");
+      r.push("Monitorar diariamente ate a realizacao da manutencao.");
+    }
+    if(nivel==="critico"){
+      r.push("PARAR O MOTOR IMEDIATAMENTE — risco de dano grave.");
+      r.push("Inspeccao completa: rolamentos, eixo, acoplamento e fundacao.");
+      r.push("Nao religar sem laudo tecnico e correccao da causa raiz.");
+    }
+    // Diagnósticos específicos pelo HTML do diagnóstico salvo
+    if(diagHTML){
+      if(diagHTML.indexOf("Falha em Rolamento")>=0||diagHTML.indexOf("Rolamento")>=0)
+        r.push("Planejar substituicao preventiva do rolamento. Verificar folga radial e lubrificacao.");
+      if(diagHTML.indexOf("Desequilibrio")>=0||diagHTML.indexOf("Desequilíbrio")>=0)
+        r.push("Acionar servico de balanceamento dinamico do rotor.");
+      if(diagHTML.indexOf("Desalinhamento")>=0)
+        r.push("Verificar alinhamento com relogio comparador.");
+      if(diagHTML.indexOf("Folga")>=0||diagHTML.indexOf("Ressonancia")>=0||diagHTML.indexOf("Ressonância")>=0)
+        r.push("Reapertar todos os elementos de fixacao e verificar rigidez da base.");
+    }
+    return r;
+  }
+
+  // Cabeçalho
   doc.setFillColor(29,79,145);doc.rect(0,0,W,28,"F");
   doc.setTextColor(255,255,255);doc.setFont("helvetica","bold");doc.setFontSize(16);
-  doc.text("RELATÓRIO DE ANÁLISE DE VIBRAÇÃO",W/2,12,{align:"center"});
+  doc.text("RELATORIO DE ANALISE DE VIBRACAO",W/2,12,{align:"center"});
   doc.setFontSize(9);doc.setFont("helvetica","normal");doc.text("ISO 10816-1",W/2,20,{align:"center"});
   var a=new Date();
-  doc.setTextColor(200,220,255);doc.text("Data: "+fmt(a.getDate())+"/"+fmt(a.getMonth()+1)+"/"+a.getFullYear()+"  "+fmt(a.getHours())+":"+fmt(a.getMinutes()),W/2,26,{align:"center"});
+  doc.setTextColor(200,220,255);
+  doc.text("Data: "+fmt(a.getDate())+"/"+fmt(a.getMonth()+1)+"/"+a.getFullYear()+"  "+fmt(a.getHours())+":"+fmt(a.getMinutes()),W/2,26,{align:"center"});
   y=36;
-  var nome=document.getElementById("motor-nome").value.trim()||"Não informado";
-  doc.setFillColor(240,244,255);doc.rect(M,y,W-2*M,14,"F");doc.setDrawColor(200,210,230);doc.rect(M,y,W-2*M,14,"S");
-  doc.setTextColor(29,79,145);doc.setFont("helvetica","bold");doc.setFontSize(10);doc.text("EQUIPAMENTO:",M+4,y+6);
-  doc.setTextColor(50,50,50);doc.setFont("helvetica","normal");doc.text(nome,M+40,y+6);
-  doc.setTextColor(29,79,145);doc.setFont("helvetica","bold");doc.text("CLASSE:",M+4,y+11);
-  doc.setTextColor(50,50,50);doc.setFont("helvetica","normal");doc.setFontSize(9);doc.text(document.getElementById("classe-info").textContent,M+22,y+11);
-  y+=20;
-  ["LA-H","LA-V","LOA-H","LOA-V"].forEach(function(chave){
-    var dados=dadosPontos[chave];if(!dados)return;
-    var p=chave.split("-")[0],d=chave.split("-")[1];
-    var nomeP=p==="LA"?"L.A — Lado do Acoplamento":"L.O.A — Lado Oposto ao Acoplamento";
-    var label=nomeP+" | "+(d==="H"?"Horizontal":"Vertical");
+
+  // Equipamento e Classe
+  var nome=document.getElementById("motor-nome").value.trim()||"Nao informado";
+  var classe=document.getElementById("classe-info").textContent;
+  doc.setFillColor(240,244,255);doc.rect(M,y,W-2*M,14,"F");
+  doc.setDrawColor(200,210,230);doc.rect(M,y,W-2*M,14,"S");
+  doc.setTextColor(29,79,145);doc.setFont("helvetica","bold");doc.setFontSize(10);
+  doc.text("EQUIPAMENTO:",M+4,y+6);
+  doc.setTextColor(50,50,50);doc.setFont("helvetica","normal");doc.text(nome,M+42,y+6);
+  doc.setTextColor(29,79,145);doc.setFont("helvetica","bold");
+  doc.text("CLASSE:",M+4,y+11);
+  doc.setTextColor(50,50,50);doc.setFont("helvetica","normal");doc.setFontSize(9);
+  doc.text(limpar(classe),M+24,y+11);
+  y+=22;
+
+  // Mapa de cores
+  var cM={"var(--green)":[76,175,80],"var(--yellow)":[255,193,7],"var(--orange2)":[255,152,0],"var(--red)":[244,67,54]};
+  // Mapa nível pelo badge
+  function nivelDoBadge(resultado){
+    if(!resultado)return"normal";
+    var r=resultado.toUpperCase();
+    if(r.indexOf("INACEIT")>=0)return"critico";
+    if(r.indexOf("INSATISF")>=0)return"alerta";
+    if(r.indexOf("SATISF")>=0)return"atencao";
+    return"normal";
+  }
+
+  // Bloco de cada ponto
+  ["LA","LOA"].forEach(function(chave){
+    var dados=dadosPontos[chave]; if(!dados)return;
+    var label=chave==="LA"?"L.A — Lado do Acoplamento":"L.O.A — Lado Oposto ao Acoplamento";
+
+    // Título do ponto
     doc.setFillColor(29,79,145);doc.rect(M,y,W-2*M,9,"F");
-    doc.setTextColor(255,255,255);doc.setFont("helvetica","bold");doc.setFontSize(10);doc.text(label,M+4,y+6);y+=12;
-    [["Aceleração",dados.acc>0?dados.acc.toFixed(1)+" m/s²":"—"],["Velocidade",dados.vel>0?dados.vel.toFixed(1)+" mm/s":"—"],["Deslocamento",dados.disp>0?Number(dados.disp).toFixed(3)+" mm":"—"]].forEach(function(kv,i){
-      doc.setFillColor(i%2===0?248:255,i%2===0?250:255,255);doc.rect(M,y,W-2*M,8,"F");
+    doc.setTextColor(255,255,255);doc.setFont("helvetica","bold");doc.setFontSize(10);
+    doc.text(label,M+4,y+6); y+=12;
+
+    // Valores medidos
+    var linhas=[
+      ["Aceleracao", dados.acc>0?dados.acc.toFixed(1)+" m/s2":"—"],
+      ["Velocidade", dados.vel>0?dados.vel.toFixed(1)+" mm/s":"—"],
+      ["Deslocamento",dados.disp>0?Number(dados.disp).toFixed(3)+" mm":"—"]
+    ];
+    linhas.forEach(function(kv,i){
+      doc.setFillColor(i%2===0?248:255,i%2===0?250:255,255);
+      doc.rect(M,y,W-2*M,8,"F");
       doc.setDrawColor(220,225,235);doc.rect(M,y,W-2*M,8,"S");
-      doc.setTextColor(100,100,100);doc.setFont("helvetica","bold");doc.setFontSize(9);doc.text(kv[0]+":",M+4,y+5.5);
-      doc.setTextColor(50,50,50);doc.setFont("helvetica","normal");doc.text(kv[1],M+38,y+5.5);y+=8;
+      doc.setTextColor(100,100,100);doc.setFont("helvetica","bold");doc.setFontSize(9);
+      doc.text(kv[0]+":",M+4,y+5.5);
+      doc.setTextColor(50,50,50);doc.setFont("helvetica","normal");
+      doc.text(kv[1],M+40,y+5.5); y+=8;
     });
-    var cM={"var(--green)":[76,175,80],"var(--yellow)":[255,193,7],"var(--orange2)":[255,152,0],"var(--red)":[244,67,54]};
-    doc.setFillColor.apply(doc,cM[dados.corBadge]||[29,79,145]);doc.rect(M,y,W-2*M,10,"F");
+
+    // Badge resultado
+    var rgb=cM[dados.corBadge]||[29,79,145];
+    doc.setFillColor.apply(doc,rgb);doc.rect(M,y,W-2*M,10,"F");
     doc.setTextColor(255,255,255);doc.setFont("helvetica","bold");doc.setFontSize(11);
-    doc.text(dados.resultado.replace(/[^\w\sÀ-ú]/gu,"").trim(),W/2,y+7,{align:"center"});y+=16;
+    doc.text(limpar(dados.resultado),W/2,y+7,{align:"center"}); y+=14;
+
+    // Recomendações
+    var nivel=nivelDoBadge(dados.resultado);
+    var recs=recsTexto(nivel, dados.diagHTML||"");
+    if(recs.length>0){
+      doc.setFillColor(240,244,255);doc.rect(M,y,W-2*M,8,"F");
+      doc.setDrawColor(200,210,230);doc.rect(M,y,W-2*M,8,"S");
+      doc.setTextColor(29,79,145);doc.setFont("helvetica","bold");doc.setFontSize(9);
+      doc.text("RECOMENDACOES:",M+4,y+5.5); y+=9;
+      doc.setFont("helvetica","normal");doc.setFontSize(8.5);doc.setTextColor(50,50,50);
+      recs.forEach(function(rec){
+        var linhasRec=doc.splitTextToSize("- "+rec, W-2*M-6);
+        linhasRec.forEach(function(l){
+          if(y>272){doc.addPage();y=20;}
+          doc.text(l,M+4,y); y+=5;
+        });
+      });
+    }
+    y+=6;
     if(y>260){doc.addPage();y=20;}
   });
+
+  // Texto do relatório
   var tr=document.getElementById("relatorio-texto");
-  if(tr&&tr.value.trim()){
-    doc.setFillColor(29,79,145);doc.rect(M,y,W-2*M,9,"F");
-    doc.setTextColor(255,255,255);doc.setFont("helvetica","bold");doc.setFontSize(10);doc.text("TEXTO DO RELATÓRIO",M+4,y+6);y+=12;
-    doc.setTextColor(50,50,50);doc.setFont("helvetica","normal");doc.setFontSize(9);
-    doc.splitTextToSize(tr.value,W-2*M-4).forEach(function(l){if(y>270){doc.addPage();y=20;}doc.text(l,M+2,y);y+=5;});
+  if(!tr||!tr.value.trim()){
+    var wtr=document.getElementById("w-relatorio-texto");
+    if(wtr&&wtr.value.trim())tr=wtr;
   }
+  if(tr&&tr.value.trim()){
+    if(y>250){doc.addPage();y=20;}
+    doc.setFillColor(29,79,145);doc.rect(M,y,W-2*M,9,"F");
+    doc.setTextColor(255,255,255);doc.setFont("helvetica","bold");doc.setFontSize(10);
+    doc.text("TEXTO DO RELATORIO",M+4,y+6); y+=12;
+    doc.setTextColor(50,50,50);doc.setFont("helvetica","normal");doc.setFontSize(9);
+    doc.splitTextToSize(limpar(tr.value),W-2*M-4).forEach(function(l){
+      if(y>270){doc.addPage();y=20;}
+      doc.text(l,M+2,y); y+=5;
+    });
+  }
+
+  // Rodapé
   doc.setFillColor(240,244,255);doc.rect(0,285,W,12,"F");
-  doc.setTextColor(100,100,100);doc.setFontSize(8);
-  doc.text("Desenvolvido por Luciano Souza e Valdemir Bartelli  •  ISO 10816-1",W/2,292,{align:"center"});
+  doc.setTextColor(100,100,100);doc.setFontSize(8);doc.setFont("helvetica","normal");
+  doc.text("Desenvolvido por Luciano Souza e Valdemir Bartelli  -  ISO 10816-1",W/2,292,{align:"center"});
+
   doc.save("Vibracao_"+nome.replace(/[^a-zA-Z0-9]/g,"_")+"_"+fmt(a.getDate())+fmt(a.getMonth()+1)+a.getFullYear()+".pdf");
 }
 
