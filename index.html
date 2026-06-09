@@ -955,57 +955,61 @@ function gerarPDF(){
     return"normal";
   }
 
-  // Bloco de cada ponto
-  ["LA","LOA"].forEach(function(chave){
-    var dados=dadosPontos[chave]; if(!dados)return;
-    var label=chave==="LA"?"L.A — Lado do Acoplamento":"L.O.A — Lado Oposto ao Acoplamento";
+  // Itera todos os pontos medidos agrupando por L.A e L.O.A
+  ["LA","LOA"].forEach(function(p){
+    ["H","V"].forEach(function(d){
+      var chave=p+"-"+d;
+      var dados=dadosPontos[chave]; if(!dados)return;
+      var nomeP=p==="LA"?"L.A — Lado do Acoplamento":"L.O.A — Lado Oposto ao Acoplamento";
+      var label=nomeP+" | "+(d==="H"?"Horizontal":"Vertical");
 
-    // Título do ponto
-    doc.setFillColor(29,79,145);doc.rect(M,y,W-2*M,9,"F");
-    doc.setTextColor(255,255,255);doc.setFont("helvetica","bold");doc.setFontSize(10);
-    doc.text(label,M+4,y+6); y+=12;
+      // Título do ponto
+      doc.setFillColor(29,79,145);doc.rect(M,y,W-2*M,9,"F");
+      doc.setTextColor(255,255,255);doc.setFont("helvetica","bold");doc.setFontSize(10);
+      doc.text(label,M+4,y+6); y+=12;
 
-    // Valores medidos
-    var linhas=[
-      ["Aceleracao", dados.acc>0?dados.acc.toFixed(1)+" m/s2":"—"],
-      ["Velocidade", dados.vel>0?dados.vel.toFixed(1)+" mm/s":"—"],
-      ["Deslocamento",dados.disp>0?Number(dados.disp).toFixed(3)+" mm":"—"]
-    ];
-    linhas.forEach(function(kv,i){
-      doc.setFillColor(i%2===0?248:255,i%2===0?250:255,255);
-      doc.rect(M,y,W-2*M,8,"F");
-      doc.setDrawColor(220,225,235);doc.rect(M,y,W-2*M,8,"S");
-      doc.setTextColor(100,100,100);doc.setFont("helvetica","bold");doc.setFontSize(9);
-      doc.text(kv[0]+":",M+4,y+5.5);
-      doc.setTextColor(50,50,50);doc.setFont("helvetica","normal");
-      doc.text(kv[1],M+40,y+5.5); y+=8;
-    });
-
-    // Badge resultado
-    var rgb=cM[dados.corBadge]||[29,79,145];
-    doc.setFillColor.apply(doc,rgb);doc.rect(M,y,W-2*M,10,"F");
-    doc.setTextColor(255,255,255);doc.setFont("helvetica","bold");doc.setFontSize(11);
-    doc.text(limpar(dados.resultado),W/2,y+7,{align:"center"}); y+=14;
-
-    // Recomendações
-    var nivel=nivelDoBadge(dados.resultado);
-    var recs=recsTexto(nivel, dados.diagHTML||"");
-    if(recs.length>0){
-      doc.setFillColor(240,244,255);doc.rect(M,y,W-2*M,8,"F");
-      doc.setDrawColor(200,210,230);doc.rect(M,y,W-2*M,8,"S");
-      doc.setTextColor(29,79,145);doc.setFont("helvetica","bold");doc.setFontSize(9);
-      doc.text("RECOMENDACOES:",M+4,y+5.5); y+=9;
-      doc.setFont("helvetica","normal");doc.setFontSize(8.5);doc.setTextColor(50,50,50);
-      recs.forEach(function(rec){
-        var linhasRec=doc.splitTextToSize("- "+rec, W-2*M-6);
-        linhasRec.forEach(function(l){
-          if(y>272){doc.addPage();y=20;}
-          doc.text(l,M+4,y); y+=5;
-        });
+      // Valores medidos
+      var linhas=[
+        ["Aceleracao", dados.acc>0?dados.acc.toFixed(1)+" m/s2":"—"],
+        ["Velocidade", dados.vel>0?dados.vel.toFixed(1)+" mm/s":"—"],
+        ["Deslocamento",dados.disp>0?Number(dados.disp).toFixed(3)+" mm":"—"]
+      ];
+      linhas.forEach(function(kv,i){
+        doc.setFillColor(i%2===0?248:255,i%2===0?250:255,255);
+        doc.rect(M,y,W-2*M,8,"F");
+        doc.setDrawColor(220,225,235);doc.rect(M,y,W-2*M,8,"S");
+        doc.setTextColor(100,100,100);doc.setFont("helvetica","bold");doc.setFontSize(9);
+        doc.text(kv[0]+":",M+4,y+5.5);
+        doc.setTextColor(50,50,50);doc.setFont("helvetica","normal");
+        doc.text(kv[1],M+40,y+5.5); y+=8;
       });
-    }
-    y+=6;
-    if(y>260){doc.addPage();y=20;}
+
+      // Badge resultado
+      var rgb=cM[dados.corBadge]||[29,79,145];
+      doc.setFillColor.apply(doc,rgb);doc.rect(M,y,W-2*M,10,"F");
+      doc.setTextColor(255,255,255);doc.setFont("helvetica","bold");doc.setFontSize(11);
+      doc.text(limpar(dados.resultado),W/2,y+7,{align:"center"}); y+=14;
+
+      // Recomendações
+      var nivel=nivelDoBadge(dados.resultado);
+      var recs=recsTexto(nivel, dados.diagHTML||"");
+      if(recs.length>0){
+        doc.setFillColor(240,244,255);doc.rect(M,y,W-2*M,8,"F");
+        doc.setDrawColor(200,210,230);doc.rect(M,y,W-2*M,8,"S");
+        doc.setTextColor(29,79,145);doc.setFont("helvetica","bold");doc.setFontSize(9);
+        doc.text("RECOMENDACOES:",M+4,y+5.5); y+=9;
+        doc.setFont("helvetica","normal");doc.setFontSize(8.5);doc.setTextColor(50,50,50);
+        recs.forEach(function(rec){
+          var linhasRec=doc.splitTextToSize("- "+rec, W-2*M-6);
+          linhasRec.forEach(function(l){
+            if(y>272){doc.addPage();y=20;}
+            doc.text(l,M+4,y); y+=5;
+          });
+        });
+      }
+      y+=6;
+      if(y>260){doc.addPage();y=20;}
+    });
   });
 
   // Texto do relatório
