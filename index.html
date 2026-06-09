@@ -55,9 +55,12 @@ select{width:100%;padding:8px;border-radius:6px;border:1px solid #999;background
 .rec-section b{display:block;margin-bottom:4px;font-size:11px;}
 
 /* Botões ANALISAR / LIMPAR */
-.buttons{display:flex;gap:10px;margin-top:14px;}
+.buttons{display:flex;gap:10px;margin-top:14px;margin-bottom:0;}
 .buttons button{flex:1;border:none;padding:12px;border-radius:8px;font-weight:bold;cursor:pointer;font-size:14px;}
 .analyze{background:#fbc02d;color:#1a1a1a;} .clear{background:#d32f2f;color:white;}
+
+/* Resultado — separado dos botões */
+.result{margin-top:18px;padding-top:14px;border-top:2px solid #ccc;}
 
 /* Histórico */
 .historico-section{margin-top:16px;border-top:1px solid var(--card-border);padding-top:12px;}
@@ -131,7 +134,7 @@ body{background:var(--bg);display:flex;justify-content:center;align-items:flex-s
    LAYOUT WIDE — tablet, desktop, landscape
    (≥ 700px ou landscape com min-width 600px)
 ══════════════════════════════════════════════ */
-@media (min-width:700px), (orientation:landscape) and (min-width:600px) {
+@media (min-width:860px) {
 
   body{
     background:var(--bg);
@@ -417,7 +420,7 @@ body{background:var(--bg);display:flex;justify-content:center;align-items:flex-s
       <button class="btn-copiar" onclick="copiarRelatorio()">📋 COPIAR TEXTO</button>
       <div class="copiado-msg" id="copiado-msg">✅ Texto copiado!</div>
     </div>
-    <div class="footer">ISO 10816-1 &nbsp;|&nbsp; Luciano Souza &amp; Valdemir Bartelli</div>
+    <div class="footer">ISO 10816-1 &nbsp;|&nbsp; Desenvolvido por Luciano Souza e Valdemir Bartelli</div>
   </div>
 </div>
 
@@ -432,7 +435,7 @@ body{background:var(--bg);display:flex;justify-content:center;align-items:flex-s
       <div class="wide-header-title">⚙ Analisador de Vibração</div>
       <div class="wide-header-sub">ISO 10816-1 &nbsp;·&nbsp; Análise de motores elétricos</div>
     </div>
-    <div class="wide-header-badge">MODO PROFISSIONAL</div>
+    <div class="wide-header-badge" style="display:none"></div>
   </div>
 
   <!-- Corpo duas colunas -->
@@ -494,7 +497,7 @@ body{background:var(--bg);display:flex;justify-content:center;align-items:flex-s
 
       <div style="margin-top:auto;padding-top:10px;border-top:1px solid #dde3ec;">
         <button class="btn-copiar" style="background:var(--blue);margin-bottom:6px;" onclick="gerarPDF()">📄 GERAR PDF</button>
-        <div class="footer" style="color:#3a5a8a;">Luciano Souza &amp; Valdemir Bartelli</div>
+        <div class="footer" style="color:#3a5a8a;">Desenvolvido por Luciano Souza e Valdemir Bartelli</div>
       </div>
     </div>
 
@@ -589,7 +592,7 @@ body{background:var(--bg);display:flex;justify-content:center;align-items:flex-s
 
   <div class="wide-footer">
     <span>ISO 10816-1 &nbsp;·&nbsp; Análise de Vibração em Motores Elétricos</span>
-    <span>Luciano Souza &amp; Valdemir Bartelli</span>
+    <span>Desenvolvido por Luciano Souza e Valdemir Bartelli</span>
   </div>
 </div><!-- /wide-root -->
 
@@ -934,9 +937,9 @@ if("serviceWorker" in navigator){
 <script>
 // ─── DETECTAR LAYOUT E MOSTRAR O CORRETO ───
 function aplicarLayout(){
-  var wide = window.innerWidth >= 700 || (window.innerWidth >= 600 && window.innerHeight < window.innerWidth);
-  document.querySelector(".device").style.display     = wide ? "none"  : "block";
-  document.getElementById("wide-root").style.display  = wide ? "flex"  : "none";
+  var wide = window.innerWidth >= 860;
+  document.querySelector(".device").style.display    = wide ? "none" : "block";
+  document.getElementById("wide-root").style.display = wide ? "flex" : "none";
 }
 aplicarLayout();
 window.addEventListener("resize", aplicarLayout);
