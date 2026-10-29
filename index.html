@@ -1219,4 +1219,87 @@ copiarRelatorio = function(){
 });
 </script>
 </body>
+<!-- ... Resto do seu HTML acima (onde ficam os inputs, motor-wrap, etc) ... -->
+
+  </div> <!-- Fechamento da última div ou elemento do seu layout -->
+
+  <!-- ══════════════════════════════════════════════
+       LÓGICA JAVASCRIPT (Insira este bloco aqui)
+  ══════════════════════════════════════════════ -->
+  <script>
+    // 1. Banco de dados com os motores extraídos da sua ficha técnica
+    const bancoMotores = {
+        "MEL0003": {
+            nome: "MT DE TRANSLAÇÃO PONTE ROLANTE 01 - PR01",
+            potencia: 24,
+            base: "rigida" 
+        },
+        "MEL0004": {
+            nome: "MT DO FREIO DE TRANSLAÇÃO PONTE 01 PR01",
+            potencia: "", // Vazio para o técnico preencher manualmente se necessário
+            base: "rigida"
+        },
+        "MEL0005": {
+            nome: "MT DO CARRINHO DA PONTE ROLANTE - PR01",
+            potencia: 7.5,
+            base: "rigida"
+        },
+        "MEL0006": {
+            nome: "MT DE ELEVAÇÃO CARGA PONTE ROLANTE PR01",
+            potencia: 70,
+            base: "rigida"
+        },
+        "MEL0020": {
+            nome: "EMBEBIÇÃO PARA 3º TERNO CJ02 - BB03",
+            potencia: 60,
+            base: "rigida"
+        },
+        "MEL0023": {
+            nome: "ÁGUA PARA EMBEBIÇÃO CJ02 - BB04",
+            potencia: 60,
+            base: "rigida"
+        },
+        "MEL0028": {
+            nome: "ACION. BB. DE MAGMA CONJ. 02",
+            potencia: 30,
+            base: "rigida"
+        }
+        // Você pode continuar alimentando essa lista com mais motores da sua ficha depois!
+    };
+
+    // 2. Função que escuta a digitação no campo de Identificação do Motor
+    function inicializarBuscaAutomatica() {
+        const inputIdentificacao = document.getElementById("motor-nome");
+
+        if (!inputIdentificacao) return;
+
+        inputIdentificacao.addEventListener("input", function() {
+            const termoBusca = this.value.toUpperCase().trim();
+
+            // Se o que o usuário digitou for um MEL cadastrado no nosso banco
+            if (bancoMotores[termoBusca]) {
+                const motorEncontrado = bancoMotores[termoBusca];
+
+                // Preenche a potência (CV) e o Tipo de Base automaticamente
+                document.getElementById("cv").value = motorEncontrado.potencia;
+                document.getElementById("base").value = motorEncontrado.base;
+
+                // Substitui o texto do input pelo código + nome completo do motor
+                this.value = `${termoBusca} - ${motorEncontrado.nome}`;
+
+                // Dispara a função que calcula a classe ISO automaticamente com os novos dados
+                if (typeof detectarClasse === "function") {
+                    detectarClasse();
+                }
+            }
+        });
+    }
+
+    // Inicializa o evento assim que a página terminar de carregar totalmente
+    window.addEventListener("DOMContentLoaded", inicializarBuscaAutomatica);
+  </script>
+
+</body>
+</html>
+
 </html>
