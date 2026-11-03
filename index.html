@@ -322,6 +322,7 @@ body{background:var(--bg);display:flex;justify-content:center;align-items:flex-s
 .fol-btns button.sec{background:#666;}
 #fol-img{width:100%;height:auto;border:1px solid #ccc;border-radius:6px;display:block;}
 #fol-msg{font-size:12px;color:#e65100;font-weight:bold;min-height:16px;margin-bottom:6px;}
+.aviso-placa{color:#d32f2f;font-size:11px;font-weight:bold;margin-top:4px;display:none;}
 </style>
 </head>
 <body>
@@ -336,7 +337,7 @@ body{background:var(--bg);display:flex;justify-content:center;align-items:flex-s
 
     <div class="group">
       <div class="label">Código MEL (busca na ficha de motores)</div>
-      <input type="text" id="mel-codigo" class="input-nome" placeholder="Ex: MEL0003" autocomplete="off" autocapitalize="characters">
+      <input type="text" id="mel-codigo" class="input-nome" placeholder="Ex: MEL0003 ou 3" autocomplete="off" autocapitalize="characters">
       <div class="mel-status" id="mel-status"></div>
     </div>
 
@@ -351,6 +352,7 @@ body{background:var(--bg);display:flex;justify-content:center;align-items:flex-s
         <input type="number" id="cv" placeholder="0" min="0" oninput="detectarClasse()" inputmode="decimal">
         <div class="unit">CV</div>
       </div>
+      <div class="aviso-placa" id="aviso-placa">⚠ Confira a potência na placa do motor</div>
     </div>
 
     <div class="group" id="grupo-base" style="display:none">
@@ -370,7 +372,7 @@ body{background:var(--bg);display:flex;justify-content:center;align-items:flex-s
     <div class="group">
       <div class="label">Ponto de Medição</div>
       <div class="btn-row">
-        <button class="sel-btn ativo" id="btn-la" onclick="selecionarPonto('LA')">
+        <button class="sel-btn" id="btn-la" onclick="selecionarPonto('LA')">
           L.A<span class="sel-sub">Lado do Acoplamento</span>
         </button>
         <button class="sel-btn" id="btn-loa" onclick="selecionarPonto('LOA')">
@@ -401,7 +403,7 @@ body{background:var(--bg);display:flex;justify-content:center;align-items:flex-s
 
     <div class="ponto-ativo-bar">
       <span class="pa-dot"></span>
-      <span id="ponto-ativo-txt">Medindo: L.A — Lado do Acoplamento</span>
+      <span id="ponto-ativo-txt">Escolha o ponto e a direção para medir</span>
     </div>
 
     <div class="group">
@@ -475,7 +477,7 @@ body{background:var(--bg);display:flex;justify-content:center;align-items:flex-s
         <div class="w-card-title">🏷 Identificação</div>
         <div class="group">
           <div class="label">Código MEL (busca na ficha de motores)</div>
-          <input type="text" id="w-mel-codigo" class="input-nome" placeholder="Ex: MEL0003" autocomplete="off" autocapitalize="characters">
+          <input type="text" id="w-mel-codigo" class="input-nome" placeholder="Ex: MEL0003 ou 3" autocomplete="off" autocapitalize="characters">
           <div class="mel-status" id="w-mel-status"></div>
         </div>
         <div class="group">
@@ -493,6 +495,7 @@ body{background:var(--bg);display:flex;justify-content:center;align-items:flex-s
             <input type="number" id="w-cv" placeholder="0" min="0" oninput="syncField('cv',this.value);detectarClasse()" inputmode="decimal">
             <div class="unit">CV</div>
           </div>
+          <div class="aviso-placa" id="w-aviso-placa">⚠ Confira a potência na placa do motor</div>
         </div>
         <div class="group" id="w-grupo-base" style="display:none">
           <div class="label">Tipo de Base</div>
@@ -510,7 +513,7 @@ body{background:var(--bg);display:flex;justify-content:center;align-items:flex-s
       <div class="w-card">
         <div class="w-card-title">📍 Ponto de Medição</div>
         <div class="btn-row">
-          <button class="sel-btn ativo" id="w-btn-la" onclick="selecionarPonto('LA')">
+          <button class="sel-btn" id="w-btn-la" onclick="selecionarPonto('LA')">
             L.A<span class="sel-sub">Acoplamento</span>
           </button>
           <button class="sel-btn" id="w-btn-loa" onclick="selecionarPonto('LOA')">
@@ -523,7 +526,7 @@ body{background:var(--bg);display:flex;justify-content:center;align-items:flex-s
         </div>
         <div class="ponto-ativo-bar" style="margin-top:6px;">
           <span class="pa-dot"></span>
-          <span id="w-ponto-ativo-txt">Medindo: L.A — Lado do Acoplamento</span>
+          <span id="w-ponto-ativo-txt">Escolha o ponto e a direção para medir</span>
         </div>
       </div>
 
@@ -636,8 +639,8 @@ body{background:var(--bg);display:flex;justify-content:center;align-items:flex-s
 })();
 
 // ─── ESTADO GLOBAL ───
-var pontoAtual   = "LA";   // "LA" ou "LOA"
-var direcaoAtual = "H";    // "H" ou "V"
+var pontoAtual   = "";     // "LA" ou "LOA" (começa sem seleção)
+var direcaoAtual = "";     // "H" ou "V" (começa sem seleção)
 var dadosPontos  = {};     // chave: "LA-H", "LA-V", "LOA-H", "LOA-V"
 var historico    = [];
 
@@ -692,17 +695,20 @@ function atualizarBotoes(){
   document.getElementById("btn-h").className="sel-btn"+(direcaoAtual==="H"?" ativo":"");
   document.getElementById("btn-v").className="sel-btn"+(direcaoAtual==="V"?" ativo":"");
   // Barra indicadora
-  var txtPonto=pontoAtual==="LA"?"L.A — Lado do Acoplamento":"L.O.A — Lado Oposto ao Acoplamento";
-  var txtDir=direcaoAtual==="H"?" | Horizontal":direcaoAtual==="V"?" | Vertical":"";
-  document.getElementById("ponto-ativo-txt").textContent="Medindo: "+txtPonto+txtDir;
+  var txtPonto=pontoAtual==="LA"?"L.A — Lado do Acoplamento":pontoAtual==="LOA"?"L.O.A — Lado Oposto ao Acoplamento":"escolha o ponto";
+  var txtDir=direcaoAtual==="H"?"Horizontal":direcaoAtual==="V"?"Vertical":"escolha a direção";
+  document.getElementById("ponto-ativo-txt").textContent=(!pontoAtual&&!direcaoAtual)
+    ?"Escolha o ponto e a direção para medir"
+    :"Medindo: "+txtPonto+" | "+txtDir;
 }
 
 function selecionarDirecao(dir){
+  var tinha=!!(pontoAtual&&direcaoAtual);
   salvarCamposAtuais();
   direcaoAtual=dir;
   atualizarBotoes();
   mostrarPontos();
-  carregarDadosPonto();
+  carregarDadosPonto(!tinha);
 }
 
 // ─── SELECIONAR PONTO (L.A ou L.O.A) ───
@@ -722,7 +728,7 @@ function salvarCamposAtuais(){
   }
 }
 
-function carregarDadosPonto(){
+function carregarDadosPonto(preservar){
   if(!pontoAtual||!direcaoAtual) return;
   var chave=pontoAtual+"-"+direcaoAtual;
   var dados=dadosPontos[chave];
@@ -736,6 +742,7 @@ function carregarDadosPonto(){
     badge.style.color=dados.corBadge==="var(--yellow)"?"#333":"white";
     document.getElementById("diagnosis").innerHTML=dados.diagHTML||"";
   } else {
+    if(preservar) return;   // 1ª escolha de ponto+direção: mantém o que a pessoa já digitou
     document.getElementById("acc").value="";
     document.getElementById("vel").value="";
     document.getElementById("disp").value="";
@@ -747,15 +754,16 @@ function carregarDadosPonto(){
 }
 
 function selecionarPonto(ponto){
+  var tinha=!!(pontoAtual&&direcaoAtual);
   salvarCamposAtuais();
   pontoAtual=ponto;
   atualizarBotoes();
   mostrarPontos();
-  carregarDadosPonto();
+  carregarDadosPonto(!tinha);
 }
 
 // ─── TABELAS ISO 10816-1 ───
-var LIMITES_VEL={"1":{A:1.80,B:4.50,C:7.10},"2":{A:2.80,B:7.10,C:11.20},"3":{A:4.50,B:11.20,C:18.00},"4":{A:7.10,B:18.00,C:28.00}};
+var LIMITES_VEL={"1":{A:0.71,B:1.80,C:4.50},"2":{A:1.12,B:2.80,C:7.10},"3":{A:1.80,B:4.50,C:11.20},"4":{A:2.80,B:7.10,C:18.00}};
 var LIMITES_ACC={A:3.0,B:10.0,C:50.0};
 var LIMITES_DISP={"1":{A:0.025,B:0.071,C:0.180},"2":{A:0.045,B:0.112,C:0.280},"3":{A:0.071,B:0.180,C:0.450},"4":{A:0.112,B:0.280,C:0.710}};
 
@@ -1388,9 +1396,16 @@ function setMelStatus(cls,txt){
 function setAmbos(id,valor){
   [id,"w-"+id].forEach(function(i){var el=document.getElementById(i);if(el)el.value=valor;});
 }
+var ultimaBusca="";   // último MEL encontrado (evita refazer a busca e sobrescrever uma correção da potência)
+function setAviso(on){
+  ["aviso-placa","w-aviso-placa"].forEach(function(id){
+    var el=document.getElementById(id); if(el) el.style.display=on?"block":"none";
+  });
+}
 function limparMEL(){
   setAmbos("mel-codigo","");
   setMelStatus("","");
+  setAviso(false); ultimaBusca="";
 }
 // origem: "" = campo do mobile | "w-" = campo do wide
 function buscarMEL(origem,final){
@@ -1399,10 +1414,12 @@ function buscarMEL(origem,final){
   var outro=document.getElementById((origem?"":"w-")+"mel-codigo");
   if(outro && outro.value!==campo.value) outro.value=campo.value;
   var digitos=campo.value.replace(/\D/g,"");
-  if(!digitos){setMelStatus("","");return;}
+  if(!digitos){setMelStatus("","");setAviso(false);return;}
   var chave=normalizarMEL(campo.value);
+  if(final && chave===ultimaBusca) return;   // só saiu do campo: não refaz nem sobrescreve correções
   var reg=BANCO_MEL[chave];
   if(!reg){
+    setAviso(false);
     if(final||digitos.length>=4) setMelStatus("erro","✖ "+chave+" não encontrado — preencha manualmente");
     else setMelStatus("","");
     return;
@@ -1412,16 +1429,22 @@ function buscarMEL(origem,final){
   if(cv!==null && cv!==undefined){
     setAmbos("cv",cv);
     detectarClasse();
+    setAviso(true); ultimaBusca=chave;
     setMelStatus("ok","✔ "+chave+" encontrado — pode corrigir os campos se precisar");
   } else {
     setAmbos("cv","");
     detectarClasse();
+    setAviso(false); ultimaBusca=chave;
     setMelStatus("aviso", bruto
       ? "⚠ "+chave+": potência na ficha é \""+bruto+"\" — informe em CV manualmente"
       : "⚠ "+chave+": sem potência na ficha — informe em CV manualmente");
   }
 }
 document.addEventListener("DOMContentLoaded",function(){
+  ["cv","w-cv"].forEach(function(id){
+    var c=document.getElementById(id);
+    if(c) c.addEventListener("input",function(){setAviso(false);});
+  });
   ["","w-"].forEach(function(pre){
     var m=document.getElementById(pre+"mel-codigo");
     if(!m) return;
@@ -1498,6 +1521,7 @@ function recomendacoes(nivel,blocos){
 }
 
 function analisar(){
+  if(!pontoAtual||!direcaoAtual){alert("Escolha o ponto (L.A ou L.O.A) e a direção (Horizontal ou Vertical) antes de analisar.");return;}
   var cv=parseFloat(document.getElementById("cv").value)||0;
   if(cv<=0){alert("Informe a potência do motor em CV antes de analisar.");return;}
   var cls=getClasse();
@@ -1505,7 +1529,7 @@ function analisar(){
   var vel=parseFloat(document.getElementById("vel").value)||0;
   var disp=parseFloat(document.getElementById("disp").value)||0;
   var na=nAcc(acc),nv=nVel(vel,cls),nd=nDisp(disp,cls);
-  var geral=pior(na,nv,nd);
+  var geral=nv;   // resultado decidido só pela velocidade (tabela do manual)
   var blocos=diagTextos(acc,vel,disp,cls,na,nv,nd);
   var recs=recomendacoes(geral,blocos);
   var bMap={normal:{t:"🟢 BOM",bg:"var(--green)"},atencao:{t:"🟡 SATISFATÓRIO",bg:"var(--yellow)"},alerta:{t:"🟠 INSATISFATÓRIO",bg:"var(--orange2)"},critico:{t:"🔴 INACEITÁVEL",bg:"var(--red)"}};
@@ -1514,7 +1538,7 @@ function analisar(){
   badge.style.color=geral==="atencao"?"#333":"white";
   var nomePonto=pontoAtual==="LA"?"L.A — Lado do Acoplamento":"L.O.A — Lado Oposto ao Acoplamento";
   var nomeDir=direcaoAtual==="H"?" | Horizontal":direcaoAtual==="V"?" | Vertical":"";
-  var html='<div style="font-size:11px;color:#555;font-weight:bold;margin-bottom:8px;">CLASSE: '+document.getElementById("classe-info").textContent+'<br>PONTO: '+nomePonto+nomeDir+'</div>';
+  var html='<div style="font-size:11px;color:#555;font-weight:bold;margin-bottom:8px;">CLASSE: '+document.getElementById("classe-info").textContent+'<br>PONTO: '+nomePonto+nomeDir+'<br>Resultado definido pela velocidade (ISO 10816-1 / manual IP-63B). Aceleração e deslocamento são indicativos de apoio ao diagnóstico.</div>';
   blocos.forEach(function(b){html+='<div class="diag-bloco '+b.nivel+'"><div class="diag-titulo">'+b.titulo+'</div><div class="diag-texto">'+b.texto+'</div></div>';});
   html+='<div class="rec-section"><b>RECOMENDAÇÕES:</b>'+recs.map(function(r){return "• "+r;}).join("<br>")+'</div>';
   document.getElementById("diagnosis").innerHTML=html;
@@ -1531,7 +1555,7 @@ function analisar(){
 }
 
 function limpar(){
-  dadosPontos={}; historico=[]; pontoAtual="LA";
+  dadosPontos={}; historico=[]; pontoAtual="";
   direcaoAtual="";
   atualizarBotoes();
   mostrarPontos();
@@ -1858,6 +1882,20 @@ analisar = function(){
   ["acc","vel","disp"].forEach(function(id){
     syncField(id, document.getElementById(id).value);
   });
+};
+
+// ─── PATCH: ao trocar ponto/direção, espelha campos e resultado no wide ───
+var _origCarregarDadosPonto = carregarDadosPonto;
+carregarDadosPonto = function(preservar){
+  _origCarregarDadosPonto(preservar);
+  ["acc","vel","disp"].forEach(function(id){
+    var el=document.getElementById(id), w=document.getElementById("w-"+id);
+    if(el&&w) w.value=el.value;
+  });
+  var badge=document.getElementById("badge"), wbadge=document.getElementById("w-badge");
+  if(badge&&wbadge){wbadge.innerHTML=badge.innerHTML;wbadge.style.background=badge.style.background;wbadge.style.color=badge.style.color;}
+  var diag=document.getElementById("diagnosis"), wdiag=document.getElementById("w-diagnosis");
+  if(diag&&wdiag) wdiag.innerHTML=diag.innerHTML;
 };
 
 // ─── PATCH: limpar zera wide também ───
