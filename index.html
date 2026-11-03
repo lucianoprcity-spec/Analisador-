@@ -337,7 +337,7 @@ body{background:var(--bg);display:flex;justify-content:center;align-items:flex-s
 
     <div class="group">
       <div class="label">Código MEL (busca na ficha de motores)</div>
-      <input type="text" id="mel-codigo" class="input-nome" placeholder="Ex: MEL0003 ou 3" autocomplete="off" autocapitalize="characters">
+      <input type="text" id="mel-codigo" class="input-nome" placeholder="Ex: MEL0003" autocomplete="off" autocapitalize="characters">
       <div class="mel-status" id="mel-status"></div>
     </div>
 
@@ -477,12 +477,12 @@ body{background:var(--bg);display:flex;justify-content:center;align-items:flex-s
         <div class="w-card-title">🏷 Identificação</div>
         <div class="group">
           <div class="label">Código MEL (busca na ficha de motores)</div>
-          <input type="text" id="w-mel-codigo" class="input-nome" placeholder="Ex: MEL0003 ou 3" autocomplete="off" autocapitalize="characters">
+          <input type="text" id="w-mel-codigo" class="input-nome" placeholder="Ex: MEL0003" autocomplete="off" autocapitalize="characters">
           <div class="mel-status" id="w-mel-status"></div>
         </div>
         <div class="group">
           <div class="label">Nome / Tag do Motor</div>
-          <input type="text" id="w-motor-nome" class="input-nome" placeholder="Ex: Motor Bomba Lemasa"
+          <input type="text" id="w-motor-nome" class="input-nome" placeholder="Ex: MOTOR MULTI JATO P/ EVAPORAÇÃO"
                  oninput="syncField('motor-nome',this.value)">
         </div>
       </div>
@@ -962,7 +962,7 @@ const BANCO_MEL = {
   "MEL0430":["CALDO DOSADO CJ03 - BB06", 200.0],
   "MEL0434":["ÁGUA FILTROS P/TQ. ÁGUA TRAT. CJ03-BB66", 50.0],
   "MEL0435":["ÁLCOOL DE 1ª P/ RESERVATÓRIO - BB40", 10.0],
-  "MEL0436":["CALDO FILTRADO P/ DOSADO CJ03 - BB47", null],
+  "MEL0436":["CALDO FILTRADO P/ DOSADO CJ03 - BB47", 15.0],
   "MEL0437":["CAL P/ TQ. DE CAL TRAT.CALDO CJ01 - DI06", 12.5],
   "MEL0438":["PENEIRA ROTATIVA CJ02 - PE01", 12.5],
   "MEL0439":["MT ACION ELEVAÇÃO DE CARGA PONTE - PR04", 150.0],
@@ -1147,7 +1147,7 @@ const BANCO_MEL = {
   "MEL0706":["MEXEDOR TQ.DE SAL P/ ABRANDADORES - DO13", 1.5],
   "MEL0710":["FILTRO 16X44 - FI04", 10.0],
   "MEL0711":["AGITADOR DO FILTRO 04 - FI04", 7.5],
-  "MEL0712":["ROSCA SEM FIM DO FILTRO 04 - FI04", 25.0],
+  "MEL0712":["ROSCA SEM FIM DO FILTRO 04 - FI04", 30.0],
   "MEL0715":["ROSCA SEM FIM PARA MOEGA - FI04", null],
   "MEL0716":["CCM DA DESTILARIA - AA18", 2.0],
   "MEL0717":["CCM DOS FILTROS - AA19", 1.5],
@@ -1191,7 +1191,7 @@ const BANCO_MEL = {
   "MEL0760":["LIQUIDAÇÃO DOS DECANTADORES - BB11", 40.0],
   "MEL0761":["RESFRIAMENTO DE MANCAIS CJ02 - RF16", 75.0],
   "MEL0762":["ÁGUA PARA OSMOSE CJ02 - OS01", 60.0],
-  "MEL0764":["CONDENSADOR VAPOR SELAGEM - TG05", null],
+  "MEL0764":["CONDENSADOR VAPOR SELAGEM - TG05", 0.50],
   "MEL0765":["MT BBA ÁGUA AR ADIABÁTICO GERADOR - AA21", 25.0],
   "MEL0766":["MT BBA ÁGUA AR ADIABÁTICO GERADOR - AA20", 25.0],
   "MEL0767":["MT ACION EXAUSTOR CALDEIRA 02 - CA02", 500.0],
@@ -1267,7 +1267,7 @@ const BANCO_MEL = {
   "MEL0848":["SOPRADOR DE FULIGEM SUPERIOR CJ02 - CA02", 0.33],
   "MEL0849":["PREPARO SEMENTE LABORATÓRIO - PS03", null],
   "MEL0850":["CCM TORRES RESFRIAMENTO GERADORES - AA27", null],
-  "MEL0851":["CCM TORRES RESFRIAMENTO GERADORES - AA28", null],
+  "MEL0851":["CCM TORRES RESFRIAMENTO GERADORES - AA28", 1.15],
   "MEL0852":["PRIMÁRIO DA CALDEIRA 01 - CA01", 200.0],
   "MEL0853":["SOPRADOR DE FULIGEM INTERME. CJ01 - CA01", null],
   "MEL0854":["SOPRADOR DE FULIGEM INFERIOR CJ01 - CA02", null],
