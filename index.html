@@ -2032,5 +2032,50 @@ copiarRelatorio = function(){
   $("tab-overlay").addEventListener("click",function(e){if(e.target===this)this.style.display="none";});
 })();
 </script>
+
+<style>
+.passo-oculto{display:none !important;}
+</style>
+<script>
+// ─── PASSO A PASSO (versão de teste): cada parte só aparece depois que a anterior foi preenchida ───
+(function(){
+  var etapa=1;   // maior etapa já liberada (uma vez aberta, fica aberta até o LIMPAR)
+  function $(id){return document.getElementById(id);}
+  function blk(id){var e=$(id); return e?(e.closest(".w-card")||e.closest(".group")):null;}
+  function sel(q){return Array.prototype.slice.call(document.querySelectorAll(q));}
+  function val(a,b){var x=$(a),y=$(b);return ((x&&x.value)||(y&&y.value)||"").toString().trim();}
+  // grupos de cada etapa (celular e PC)
+  var G={
+    2:[blk("cv"),blk("w-cv"),blk("classe-info"),blk("w-classe-info")],
+    3:[blk("btn-la"),blk("w-btn-la"),blk("w-dot-la-v")].concat(sel(".device .ponto-ativo-bar")),
+    4:[blk("acc"),blk("vel"),blk("disp"),blk("w-acc")].concat(sel(".device .bar,.device .bar-legend,.device .buttons")),
+    5:[blk("w-result-card"),blk("w-historico-lista"),blk("w-relatorio-texto")].concat(sel(".device .result,.device .acoes-extra,.device .historico-section,.device .relatorio-section"))
+  };
+  function calc(){
+    var n=1;
+    if(val("motor-nome","w-motor-nome") || val("mel-codigo","w-mel-codigo").length>=4) n=2;
+    if(n>=2 && parseFloat(val("cv","w-cv"))>0) n=3;
+    if(n>=3 && typeof pontoAtual!=="undefined" && pontoAtual && direcaoAtual) n=4;
+    if(n>=4 && ((typeof historico!=="undefined" && historico.length) || (typeof dadosPontos!=="undefined" && Object.keys(dadosPontos).length))) n=5;
+    return n;
+  }
+  function aplicar(){
+    var n=calc(); if(n>etapa) etapa=n;
+    for(var k in G){
+      G[k].forEach(function(el){
+        if(!el) return;
+        var esconder=(+k>etapa), estava=el.classList.contains("passo-oculto");
+        el.classList.toggle("passo-oculto",esconder);
+        
+      });
+    }
+  }
+  var _l=window.limpar; window.limpar=function(){ var r=_l.apply(this,arguments); etapa=1; safe(); return r; };
+  function agendar(){ setTimeout(safe,30); setTimeout(safe,700); }
+  function safe(){ try{aplicar();}catch(e){} }
+  ["input","change","click","keyup","blur"].forEach(function(ev){document.addEventListener(ev,agendar,true);});
+  safe();
+})();
+</script>
 </body>
 </html>
