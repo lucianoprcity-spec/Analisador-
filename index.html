@@ -326,6 +326,9 @@ body{background:var(--bg);display:flex;justify-content:center;align-items:flex-s
 .aviso-placa{color:#d32f2f;font-size:11px;font-weight:bold;margin-top:4px;display:none;}
 .btn-tabela-iso{display:block;width:100%;margin-top:8px;padding:11px;border:2px solid #1d4f91;background:#fff;color:#1d4f91;border-radius:8px;font-weight:bold;font-size:13px;cursor:pointer;}
 .btn-tabela-iso:active{background:#e8f0fb;}
+.btn-limpar-id{display:block;width:100%;margin-top:6px;padding:9px;border:1px solid #b8bec4;background:#e9ecef;color:#444;border-radius:8px;font-weight:bold;font-size:13px;cursor:pointer;}
+.btn-limpar-id:active{background:#d5d9dd;}
+#acc::placeholder,#vel::placeholder,#disp::placeholder,#w-acc::placeholder,#w-vel::placeholder,#w-disp::placeholder{font-size:15px !important;font-family:Arial,Helvetica,sans-serif;font-weight:normal;letter-spacing:0;color:#b5b9be;}
 .acoes-extra{display:flex;gap:8px;margin-top:10px;}
 .acoes-extra button{flex:1;margin:0;padding:9px 6px;font-size:12px;}
 #tab-overlay{position:fixed;inset:0;z-index:1000;background:rgba(0,0,0,.55);display:none;align-items:flex-start;justify-content:center;padding:12px;overflow:auto;}
@@ -419,21 +422,21 @@ body{background:var(--bg);display:flex;justify-content:center;align-items:flex-s
     <div class="group">
       <div class="label">Aceleração</div>
       <div class="value">
-        <input type="number" id="acc" placeholder="0.0" step="0.1" inputmode="decimal">
+        <input type="number" id="acc" placeholder="digite" step="0.1" inputmode="decimal">
         <div class="unit">m/s²</div>
       </div>
     </div>
     <div class="group">
       <div class="label">Velocidade (Vrms)</div>
       <div class="value">
-        <input type="number" id="vel" placeholder="0.0" step="0.1" inputmode="decimal">
+        <input type="number" id="vel" placeholder="digite" step="0.1" inputmode="decimal">
         <div class="unit">mm/s</div>
       </div>
     </div>
     <div class="group">
       <div class="label">Deslocamento (pico a pico)</div>
       <div class="value">
-        <input type="number" id="disp" placeholder="0.000" step="0.001" inputmode="decimal">
+        <input type="number" id="disp" placeholder="digite" step="0.001" inputmode="decimal">
         <div class="unit">mm</div>
       </div>
     </div>
@@ -496,6 +499,7 @@ body{background:var(--bg);display:flex;justify-content:center;align-items:flex-s
           <input type="text" id="w-motor-nome" class="input-nome" placeholder="Ex: MOTOR MULTI JATO P/ EVAPORAÇÃO"
                  oninput="syncField('motor-nome',this.value)">
         </div>
+        <button type="button" class="btn-limpar-id" onclick="limpar()">🗑 LIMPAR</button>
       </div>
 
       <div class="w-card">
@@ -576,7 +580,7 @@ body{background:var(--bg);display:flex;justify-content:center;align-items:flex-s
           <div class="group">
             <div class="label">Aceleração</div>
             <div class="value">
-              <input type="number" id="w-acc" placeholder="0.0" step="0.1" inputmode="decimal"
+              <input type="number" id="w-acc" placeholder="digite" step="0.1" inputmode="decimal"
                      oninput="syncField('acc',this.value)">
               <div class="unit" style="font-size:11px;">m/s²</div>
             </div>
@@ -584,7 +588,7 @@ body{background:var(--bg);display:flex;justify-content:center;align-items:flex-s
           <div class="group">
             <div class="label">Velocidade (Vrms)</div>
             <div class="value">
-              <input type="number" id="w-vel" placeholder="0.0" step="0.1" inputmode="decimal"
+              <input type="number" id="w-vel" placeholder="digite" step="0.1" inputmode="decimal"
                      oninput="syncField('vel',this.value)">
               <div class="unit" style="font-size:11px;">mm/s</div>
             </div>
@@ -592,7 +596,7 @@ body{background:var(--bg);display:flex;justify-content:center;align-items:flex-s
           <div class="group">
             <div class="label">Deslocamento p-p</div>
             <div class="value">
-              <input type="number" id="w-disp" placeholder="0.000" step="0.001" inputmode="decimal"
+              <input type="number" id="w-disp" placeholder="digite" step="0.001" inputmode="decimal"
                      oninput="syncField('disp',this.value)">
               <div class="unit" style="font-size:11px;">mm</div>
             </div>
@@ -652,6 +656,7 @@ body{background:var(--bg);display:flex;justify-content:center;align-items:flex-s
 // ─── ESTADO GLOBAL ───
 var pontoAtual   = "";     // "LA" ou "LOA" (começa sem seleção)
 var direcaoAtual = "";     // "H" ou "V" (começa sem seleção)
+var rascunhos    = {};     // valores digitados mas ainda NÃO analisados (por ponto)
 var dadosPontos  = {};     // chave: "LA-H", "LA-V", "LOA-H", "LOA-V"
 var historico    = [];
 
@@ -724,44 +729,52 @@ function selecionarDirecao(dir){
 
 // ─── SELECIONAR PONTO (L.A ou L.O.A) ───
 function salvarCamposAtuais(){
+  // guarda só o que está digitado (rascunho). O resultado analisado (dadosPontos) só muda ao apertar ANALISAR.
   if(!pontoAtual||!direcaoAtual) return;
   var chave=pontoAtual+"-"+direcaoAtual;
-  var acc=parseFloat(document.getElementById("acc").value)||0;
-  var vel=parseFloat(document.getElementById("vel").value)||0;
-  var disp=parseFloat(document.getElementById("disp").value)||0;
-  if(acc||vel||disp){
-    var badge=document.getElementById("badge");
-    dadosPontos[chave]=dadosPontos[chave]||{};
-    dadosPontos[chave].acc=acc; dadosPontos[chave].vel=vel; dadosPontos[chave].disp=disp;
-    dadosPontos[chave].resultado=badge.innerHTML;
-    dadosPontos[chave].corBadge=badge.style.background;
-    dadosPontos[chave].diagHTML=document.getElementById("diagnosis").innerHTML;
+  var r={acc:document.getElementById("acc").value,vel:document.getElementById("vel").value,disp:document.getElementById("disp").value};
+  if(r.acc!==""||r.vel!==""||r.disp!=="") rascunhos[chave]=r; else delete rascunhos[chave];
+}
+
+function lerNum(id){return parseFloat(document.getElementById(id).value)||0;}
+
+// Mostra o resultado só se os campos (e a classe) ainda são os da última análise deste ponto.
+function atualizarSelo(){
+  if(!pontoAtual||!direcaoAtual) return;
+  var chave=pontoAtual+"-"+direcaoAtual, d=dadosPontos[chave];
+  var iguais=d && lerNum("acc")===d.acc && lerNum("vel")===d.vel && lerNum("disp")===d.disp && d.cls===getClasse();
+  var txt,bg,cor,diag;
+  if(d && iguais){
+    txt=d.resultado; bg=d.corBadge; cor=d.corBadge==="var(--yellow)"?"#333":"white"; diag=d.diagHTML||"";
+  } else if(d){
+    txt="⚪ VALORES ALTERADOS"; bg="#9aa0a6"; cor="white";
+    diag='<div style="font-size:13px;color:#b45f06;text-align:center;padding:20px 0;font-weight:bold;">Os valores (ou a potência) mudaram desde a última análise.<br>Aperte ANALISAR para atualizar o resultado.</div>';
+  } else {
+    txt="⚪ AGUARDANDO ANÁLISE"; bg="#9aa0a6"; cor="white";
+    diag='<div style="font-size:13px;color:#888;text-align:center;padding:20px 0;">Aguardando análise...</div>';
   }
+  var b=document.getElementById("badge"); b.innerHTML=txt; b.style.background=bg; b.style.color=cor;
+  document.getElementById("diagnosis").innerHTML=diag;
+  var wb=document.getElementById("w-badge"), wd=document.getElementById("w-diagnosis");
+  if(wb){wb.innerHTML=txt;wb.style.background=bg;wb.style.color=cor;}
+  if(wd) wd.innerHTML=diag;
 }
 
 function carregarDadosPonto(preservar){
   if(!pontoAtual||!direcaoAtual) return;
   var chave=pontoAtual+"-"+direcaoAtual;
-  var dados=dadosPontos[chave];
-  if(dados&&(dados.acc||dados.vel||dados.disp)){
-    document.getElementById("acc").value=dados.acc||"";
-    document.getElementById("vel").value=dados.vel||"";
-    document.getElementById("disp").value=dados.disp||"";
-    var badge=document.getElementById("badge");
-    badge.innerHTML=dados.resultado||"⚪ AGUARDANDO ANÁLISE";
-    badge.style.background=dados.corBadge||"#9aa0a6";
-    badge.style.color=dados.corBadge==="var(--yellow)"?"#333":"white";
-    document.getElementById("diagnosis").innerHTML=dados.diagHTML||"";
+  var d=dadosPontos[chave], r=rascunhos[chave];
+  if(r){
+    document.getElementById("acc").value=r.acc; document.getElementById("vel").value=r.vel; document.getElementById("disp").value=r.disp;
+  } else if(d){
+    document.getElementById("acc").value=String(d.acc); document.getElementById("vel").value=String(d.vel); document.getElementById("disp").value=String(d.disp);
   } else {
     if(preservar) return;   // 1ª escolha de ponto+direção: mantém o que a pessoa já digitou
     document.getElementById("acc").value="";
     document.getElementById("vel").value="";
     document.getElementById("disp").value="";
-    document.getElementById("badge").innerHTML="⚪ AGUARDANDO ANÁLISE";
-    document.getElementById("badge").style.background="#9aa0a6";
-    document.getElementById("badge").style.color="white";
-    document.getElementById("diagnosis").innerHTML='<div style="font-size:13px;color:#888;text-align:center;padding:20px 0;">Aguardando análise...</div>';
   }
+  atualizarSelo();
 }
 
 function selecionarPonto(ponto){
@@ -1407,6 +1420,14 @@ function setMelStatus(cls,txt){
 function setAmbos(id,valor){
   [id,"w-"+id].forEach(function(i){var el=document.getElementById(i);if(el)el.value=valor;});
 }
+var melPreenchido=null;   // o que o MEL preencheu sozinho {nome,cv}: só isso é apagado se o código for apagado/mudar
+function desfazerPreenchimentoMEL(){
+  var f=melPreenchido; melPreenchido=null; ultimaBusca=""; setAviso(false);
+  if(!f) return;
+  var n=document.getElementById("motor-nome"), c=document.getElementById("cv");
+  if(n && n.value===f.nome) setAmbos("motor-nome","");
+  if(c && String(c.value)===String(f.cv)){ setAmbos("cv",""); detectarClasse(); }   // se a pessoa já corrigiu à mão, não mexe
+}
 var ultimaBusca="";   // último MEL encontrado (evita refazer a busca e sobrescrever uma correção da potência)
 function setAviso(on){
   ["aviso-placa","w-aviso-placa"].forEach(function(id){
@@ -1414,6 +1435,7 @@ function setAviso(on){
   });
 }
 function limparMEL(){
+  melPreenchido=null;
   setAmbos("mel-codigo","");
   setMelStatus("","");
   setAviso(false); ultimaBusca="";
@@ -1425,18 +1447,20 @@ function buscarMEL(origem,final){
   var outro=document.getElementById((origem?"":"w-")+"mel-codigo");
   if(outro && outro.value!==campo.value) outro.value=campo.value;
   var digitos=campo.value.replace(/\D/g,"");
-  if(!digitos){setMelStatus("","");setAviso(false);return;}
+  if(!digitos){setMelStatus("","");desfazerPreenchimentoMEL();return;}
+  if(!final && digitos.length<4){setMelStatus("","");desfazerPreenchimentoMEL();return;}   // digitando/apagando: só busca com o código completo (4 dígitos)
   var chave=normalizarMEL(campo.value);
   if(final && chave===ultimaBusca) return;   // só saiu do campo: não refaz nem sobrescreve correções
   var reg=BANCO_MEL[chave];
   if(!reg){
-    setAviso(false);
+    desfazerPreenchimentoMEL();
     if(final||digitos.length>=4) setMelStatus("erro","✖ "+chave+" não encontrado — preencha manualmente");
     else setMelStatus("","");
     return;
   }
   var nome=reg[0], cv=reg[1], bruto=reg[2];
   setAmbos("motor-nome",chave+" - "+nome);
+  melPreenchido={nome:chave+" - "+nome, cv:(cv!==null&&cv!==undefined)?cv:""};
   if(cv!==null && cv!==undefined){
     setAmbos("cv",cv);
     detectarClasse();
@@ -1535,6 +1559,13 @@ function analisar(){
   if(!pontoAtual||!direcaoAtual){alert("Escolha o ponto (L.A ou L.O.A) e a direção (Horizontal ou Vertical) antes de analisar.");return;}
   var cv=parseFloat(document.getElementById("cv").value)||0;
   if(cv<=0){alert("Informe a potência do motor em CV antes de analisar.");return;}
+  var faltam=[];
+  ["acc","vel","disp"].forEach(function(id){
+    var t=(document.getElementById(id).value||"").toString().trim();
+    if(t===""||isNaN(parseFloat(t))) faltam.push(id==="acc"?"Aceleração":id==="vel"?"Velocidade":"Deslocamento");
+  });
+  if(faltam.length){alert("Preencha os 3 valores medidos antes de analisar.\nFalta: "+faltam.join(", ")+".");return;}
+  if(!(parseFloat(document.getElementById("vel").value)>0)){alert("A velocidade (mm/s) não pode ser 0. Confira a leitura do aparelho.");return;}
   var cls=getClasse();
   var acc=parseFloat(document.getElementById("acc").value)||0;
   var vel=parseFloat(document.getElementById("vel").value)||0;
@@ -1555,7 +1586,8 @@ function analisar(){
   document.getElementById("diagnosis").innerHTML=html;
   // Salvar
   var chaveA=pontoAtual+(direcaoAtual?"-"+direcaoAtual:"");
-  dadosPontos[chaveA]={acc:acc,vel:vel,disp:disp,resultado:bMap[geral].t,corBadge:bMap[geral].bg,diagHTML:html};
+  dadosPontos[chaveA]={acc:acc,vel:vel,disp:disp,cls:cls,resultado:bMap[geral].t,corBadge:bMap[geral].bg,diagHTML:html};
+  delete rascunhos[chaveA];
   atualizarBotoes();
   // Histórico
   var sMap={normal:"bom",atencao:"satisfatorio",alerta:"insatisfatorio",critico:"inaceitavel"};
@@ -1566,8 +1598,9 @@ function analisar(){
 }
 
 function limpar(){
-  dadosPontos={}; historico=[]; pontoAtual="";
+  dadosPontos={}; rascunhos={}; historico=[]; pontoAtual="";
   direcaoAtual="";
+  document.getElementById("base").value="rigida"; var wbase=document.getElementById("w-base"); if(wbase) wbase.value="rigida";
   atualizarBotoes();
   mostrarPontos();
   ["motor-nome","cv","acc","vel","disp"].forEach(function(id){document.getElementById(id).value="";});
@@ -1582,7 +1615,9 @@ function limpar(){
 }
 
 function adicionarHistorico(ponto,vel,acc,disp,status,statusClass,dh){
-  historico.push({ponto:ponto,vel:vel,acc:acc,disp:disp,status:status,statusClass:statusClass,dh:dh});
+  var item={ponto:ponto,vel:vel,acc:acc,disp:disp,status:status,statusClass:statusClass,dh:dh};
+  var pos=-1; historico.forEach(function(m,k){if(m.ponto===ponto) pos=k;});
+  if(pos>=0) historico[pos]=item; else historico.push(item);   // re-analisar o mesmo ponto substitui, não duplica
   renderHistorico(); atualizarRelatorio();
 }
 function renderHistorico(){
@@ -1592,8 +1627,16 @@ function renderHistorico(){
     return'<li class="historico-item '+m.statusClass+'"><div style="flex:1"><div style="display:flex;align-items:center;gap:6px"><span class="hi-ponto">'+m.ponto+'</span><span class="hi-val">'+(m.vel>0?m.vel.toFixed(1)+' mm/s':'—')+'</span><span class="hi-status">'+m.status+'</span></div><div style="font-size:10px;color:#aaa;margin-top:2px">'+m.dh+'</div></div><button class="hi-del" onclick="removerHistorico('+i+')">✕</button></li>';
   }).join("");
 }
-function removerHistorico(i){historico.splice(i,1);renderHistorico();atualizarRelatorio();}
-function limparHistorico(){historico=[];renderHistorico();atualizarRelatorio();}
+function depoisDeRemover(){
+  atualizarBotoes(); renderHistorico(); atualizarRelatorio(); atualizarSelo();
+  if(window.atualizarContadorImagem) window.atualizarContadorImagem();
+}
+function removerHistorico(i){
+  var m=historico[i]; historico.splice(i,1);
+  if(m) delete dadosPontos[m.ponto.replace(" ","-")];   // "LA H" → "LA-H": some também da imagem e do contador
+  depoisDeRemover();
+}
+function limparHistorico(){historico=[]; dadosPontos={}; depoisDeRemover();}
 
 function atualizarRelatorio(){
   var sec=document.getElementById("relatorio-section");
@@ -1605,8 +1648,8 @@ function atualizarRelatorio(){
   historico.forEach(function(m){
     var l="• "+m.ponto+" = ";
     if(m.vel>0)l+=m.vel.toFixed(1)+" mm/s";
-    if(m.acc>0)l+=" | Acel.: "+m.acc.toFixed(1)+" m/s²";
-    if(m.disp>0)l+=" | Desl.: "+m.disp.toFixed(3)+" mm";
+    if(m.acc>=0)l+=" | Acel.: "+m.acc.toFixed(1)+" m/s²";
+    if(m.disp>=0)l+=" | Desl.: "+m.disp.toFixed(3)+" mm";
     txt+=l+" — "+m.status+"\n";
   });
   document.getElementById("relatorio-texto").value=txt;
@@ -1870,10 +1913,12 @@ copiarRelatorio = function(){
     im.onerror=function(){msg("Não foi possível carregar a imagem da folha.");};
     im.src="data:image/jpeg;base64,"+IMG_B64;
   }
-  function fmt(n){
+  function fmt(n,min){   // min = casas mínimas, iguais ao visor do aparelho (acc/vel: 1, desl.: 3)
     var v=parseFloat(n);
-    if(!(v>0)) return "";
-    return String(+v.toFixed(3)).replace(".",",");
+    if(!(v>=0)) return "";   // zero medido pelo aparelho também é escrito na folha
+    var t=String(+v.toFixed(3)), dec=(t.split(".")[1]||"").length;
+    if(dec<(min||0)) t=v.toFixed(min);
+    return t.replace(".",",");
   }
   function escrever(ctx,chave,texto,max){
     if(!texto) return;
@@ -1901,9 +1946,9 @@ copiarRelatorio = function(){
         escrever(ctx,"func",$("fol-func").value.trim());
         ["LOA-V","LA-V","LOA-H","LA-H"].forEach(function(k){
           var p=ponto(k); if(!p) return;
-          escrever(ctx,k+"_acc",fmt(p.acc));
-          escrever(ctx,k+"_vel",fmt(p.vel));
-          escrever(ctx,k+"_desl",fmt(p.disp));
+          escrever(ctx,k+"_acc",fmt(p.acc,1));
+          escrever(ctx,k+"_vel",fmt(p.vel,1));
+          escrever(ctx,k+"_desl",fmt(p.disp,3));
         });
       }
       $("fol-img").src=c.toDataURL("image/png");
@@ -1940,7 +1985,7 @@ copiarRelatorio = function(){
   ["btn-la","btn-loa","btn-h","btn-v","w-btn-la","w-btn-loa","w-btn-h","w-btn-v"].forEach(function(id){
     var b=document.getElementById(id); if(b) b.addEventListener("click",function(){setTimeout(contador,0);});
   });
-  contador();
+  contador(); window.atualizarContadorImagem=contador;
   $("fol-fechar").addEventListener("click",function(){$("fol-overlay").style.display="none";});
   $("fol-overlay").addEventListener("click",function(e){if(e.target===this)this.style.display="none";});
   ["fol-setor","fol-data","fol-os","fol-tag","fol-mat","fol-func"].forEach(function(id){
@@ -2046,9 +2091,9 @@ copiarRelatorio = function(){
   function val(a,b){var x=$(a),y=$(b);return ((x&&x.value)||(y&&y.value)||"").toString().trim();}
   // grupos de cada etapa (celular e PC)
   var G={
-    2:[blk("cv"),blk("w-cv"),blk("classe-info"),blk("w-classe-info")],
+    2:[blk("cv"),blk("w-cv"),blk("classe-info"),blk("w-classe-info")].concat(sel(".device .buttons,.btn-limpar-id")),
     3:[blk("btn-la"),blk("w-btn-la"),blk("w-dot-la-v")].concat(sel(".device .ponto-ativo-bar")),
-    4:[blk("acc"),blk("vel"),blk("disp"),blk("w-acc")].concat(sel(".device .bar,.device .bar-legend,.device .buttons")),
+    4:[blk("acc"),blk("vel"),blk("disp"),blk("w-acc")].concat(sel(".device .bar,.device .bar-legend,.device .analyze")),
     5:[blk("w-result-card"),blk("w-historico-lista"),blk("w-relatorio-texto")].concat(sel(".device .result,.device .acoes-extra,.device .historico-section,.device .relatorio-section"))
   };
   function calc(){
@@ -2075,6 +2120,18 @@ copiarRelatorio = function(){
   function safe(){ try{aplicar();}catch(e){} }
   ["input","change","click","keyup","blur"].forEach(function(ev){document.addEventListener(ev,agendar,true);});
   safe();
+})();
+</script>
+
+<script>
+// ─── Mudou valor/potência/base depois de analisar → selo avisa que o resultado está desatualizado ───
+(function(){
+  function tick(){ setTimeout(function(){ try{atualizarSelo();}catch(e){} },0); }
+  var _dc=detectarClasse; detectarClasse=function(){ _dc.apply(this,arguments); try{atualizarSelo();}catch(e){} };   // MEL/CV/base mudaram
+  ["acc","vel","disp","cv","base","w-acc","w-vel","w-disp","w-cv","w-base"].forEach(function(id){
+    var el=document.getElementById(id); if(!el) return;
+    el.addEventListener("input",tick); el.addEventListener("change",tick);
+  });
 })();
 </script>
 </body>
